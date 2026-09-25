@@ -1,0 +1,6 @@
+^MARS\.Rproj$
+^MARS\.pdf$
+^.*\.Rhistory$
+^.*\.Rproj\.user$
+^src/.*\.(o|dll|so|dylib)$
+^MARS-review-report\.md$

@@ -1,0 +1,22 @@
+Package: MARS
+Type: Package
+Title: Second-Order Reduction for Sparse Precision Matrices
+Version: 0.2.0
+Authors@R: c(
+    person("Qian", "Li", email = "qianxa.li@connect.polyu.hk", role = c("aut", "cre")),
+    person("Binyan", "Jiang", email = "by.jiang@polyu.edu.hk", role = "aut"),
+    person("Defeng", "Sun", email = "defeng.sun@polyu.edu.hk", role = "aut"))
+Description: Generates a solution path of sparse precision matrices under the
+    l1-penalized D-trace loss with an adaptive sieving reduction strategy and
+    a semismooth Newton augmented Lagrangian algorithm (MARS), designed for
+    the high-dimensional setting where the sample dimension p is much greater
+    than the sample size n.
+License: GPL-2
+URL: https://github.com/QianLI-QL/MARS
+BugReports: https://github.com/QianLI-QL/MARS/issues
+Depends: Matrix
+Imports: Rcpp (>= 1.0.0)
+LinkingTo: Rcpp, RcppArmadillo
+Encoding: UTF-8
+NeedsCompilation: yes
+RoxygenNote: 7.1.1

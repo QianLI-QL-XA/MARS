@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mars-spm"
+version = "0.2.0"
+description = "Sparse precision matrix estimation via adaptive sieving + semismooth Newton augmented Lagrangian (MARS)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-2" }
+authors = [
+    { name = "Qian Li", email = "qianxa.li@connect.polyu.hk" },
+    { name = "Binyan Jiang", email = "by.jiang@polyu.edu.hk" },
+    { name = "Defeng Sun", email = "defeng.sun@polyu.edu.hk" },
+]
+keywords = ["precision matrix", "graphical model", "conditional independence", "l1", "SSNAL", "adaptive sieving"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Intended Audience :: Science/Research",
+]
+dependencies = ["numpy>=1.20"]
+
+[project.optional-dependencies]
+jit = ["numba>=0.56"]
+
+[tool.setuptools]
+packages = ["mars"]

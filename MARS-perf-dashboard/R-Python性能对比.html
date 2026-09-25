@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARS 性能对比：R(MKL) vs Python(Numba) — 真实前列腺数据</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232456A6'/%3E%3Cpath d='M8 24 L14 8 L18 8 L12 24 Z M18 24 L24 8 L28 8 L22 24 Z' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#F4F6FA; --card:#FFFFFF; --ink:#1C2230; --muted:#5B6577;
+    --line:#E3E7EF; --r:#2456A6; --py:#E8912D; --ok:#2F9E44; --warn:#C2410C;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:"Segoe UI","Microsoft YaHei",-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.6; padding:0 0 64px;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px;}
+  /* ===== Hero ===== */
+  .hero{background:linear-gradient(135deg,#1E3A8A 0%,#2456A6 55%,#2E6BB0 100%); color:#fff; padding:52px 0 44px;}
+  .hero .wrap{display:flex; flex-wrap:wrap; gap:28px; align-items:flex-end; justify-content:space-between;}
+  .hero h1{font-size:clamp(22px,3.2vw,32px); font-weight:700; letter-spacing:.2px; line-height:1.35;}
+  .hero .sub{margin-top:10px; font-size:14px; color:#DCE6F8; max-width:640px;}
+  .kpis{display:flex; gap:12px; flex-wrap:wrap;}
+  .kpi{background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.22); border-radius:12px; padding:10px 16px; min-width:120px;}
+  .kpi .v{font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:.3px;}
+  .kpi .l{font-size:12px; color:#DCE6F8; margin-top:2px;}
+  /* ===== Sections ===== */
+  .sec{margin-top:28px;}
+  .sec h2{font-size:18px; font-weight:700; display:flex; align-items:center; gap:8px;}
+  .sec h2::before{content:""; width:4px; height:16px; background:var(--r); border-radius:2px;}
+  .sec .hint{font-size:13px; color:var(--muted); margin:6px 0 14px;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;}
+  .card h3{font-size:13px; color:var(--muted); font-weight:600; margin-bottom:6px;}
+  .card p{font-size:13px;}
+  .card code{font-family:Consolas,Monaco,monospace; font-size:12px; background:#F0F3F9; padding:1px 5px; border-radius:4px;}
+  /* ===== Tables ===== */
+  table{width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; table-layout:fixed; font-size:13px;}
+  colgroup col{ }
+  th{background:#EEF2FA; font-weight:600; padding:9px 8px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap;}
+  th:first-child{text-align:left;}
+  td{padding:8px; text-align:right; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums;}
+  td:first-child{text-align:left; font-weight:600;}
+  tbody tr:last-child td{border-bottom:none;}
+  .num{font-variant-numeric:tabular-nums;}
+  .tag-r{color:var(--r); font-weight:700;}
+  .tag-py{color:var(--warn); font-weight:700;}
+  .tag-ok{color:var(--ok); font-weight:700;}
+  .subtotal td{background:#F8FAFE; font-weight:700;}
+  .tables{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:820px){.tables{grid-template-columns:1fr;}}
+  .tbl-scroll{overflow-x:auto;}
+  /* ===== Charts ===== */
+  .chart{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-top:14px;}
+  .chart .cap{font-size:13px; color:var(--muted); margin-bottom:4px;}
+  .chart .box{width:100%; height:360px;}
+  .nojs{color:var(--muted); font-size:12px;}
+  /* ===== Conclusion ===== */
+  .concl{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-top:14px;}
+  .concl ol{margin-left:20px; display:grid; gap:8px;}
+  .concl li{font-size:14px;}
+  .concl b{color:var(--r);}
+  .foot{margin-top:24px; font-size:12px; color:var(--muted); text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- ===== Hero ===== -->
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <h1>MARS 三语性能对比：R(MKL) vs Python(Numba)</h1>
+      <div class="sub">真实前列腺基因表达数据（prostmat.csv，p=6033），分 control（n=50）与 prostate cancer（n=52）两组；λ 路径取前 3 点（排除低 λ 病态区）；SSNAL + adaptive sieving + PCG，顺序运行、无并行。</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v">1.27×</div><div class="l">control 加速（R/Py）</div></div>
+      <div class="kpi"><div class="v">1.17×</div><div class="l">cancer 加速（R/Py）</div></div>
+      <div class="kpi"><div class="v">3.4e-6</div><div class="l">最大 obj 相对误差</div></div>
+      <div class="kpi"><div class="v">≤1 边</div><div class="l">稀疏结构 s_off 差异</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== 方法 ===== -->
+  <section class="sec">
+    <h2>测试设置</h2>
+    <div class="hint">两组数据同一路径、同一停机准则，仅求解器实现与 BLAS 不同。</div>
+    <div class="cards">
+      <div class="card"><h3>数据</h3><p><code>prostmat.csv</code> 6033×102（50 control + 52 cancer）；z-score 标准化；findA = 行中心化 + thin SVD。</p></div>
+      <div class="card"><h3>λ 路径</h3><p>maxλ 的 95% / 85% / 75% 共 3 点（<b>排除</b> 65% 低 λ 病态多解区）。</p></div>
+      <div class="card"><h3>算法参数</h3><p><code>stoptol=1e-4</code>，<code>maxiter=10</code>，<code>stopmethod=fix</code>；gap&lt;tol 停机补丁已启用。</p></div>
+      <div class="card"><h3>环境</h3><p>R 4.6.1（UCRT）+ Intel MKL 2024.2.2；Python 3 + Numba v3（11 个 JIT 内核）。同一台 Windows 主机，顺序执行。</p></div>
+    </div>
+  </section>
+
+  <!-- ===== 汇总表 ===== -->
+  <section class="sec">
+    <h2>分 λ 指标明细</h2>
+    <div class="hint">obj 为原始目标函数值（负值）；s_off = 上三角非零边数；Δobj 与 rel 为 |obj_R − obj_Py| 及其相对误差。</div>
+    <div class="tables">
+      <div class="tbl-scroll">
+        <table>
+          <colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:12%"></colgroup>
+          <thead><tr><th>control (n=50)</th><th>R 时间(s)</th><th>R obj</th><th>R s_off</th><th>Py 时间(s)</th><th>Py obj</th><th>Py s_off</th><th>Δobj</th><th>rel</th></tr></thead>
+          <tbody id="tbl-control"></tbody>
+        </table>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <colgroup><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:12%"></colgroup>
+          <thead><tr><th>cancer (n=52)</th><th>R 时间(s)</th><th>R obj</th><th>R s_off</th><th>Py 时间(s)</th><th>Py obj</th><th>Py s_off</th><th>Δobj</th><th>rel</th></tr></thead>
+          <tbody id="tbl-cancer"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+<!-- ===== Charts ===== -->
+<section class="sec">
+  <h2>耗时对比</h2>
+  <div class="hint">同一主机顺序执行；R 为 MKL 版，Python 为 Numba JIT 版；柱状图均从 0 起。</div>
+
+  <div class="chart">
+    <div class="cap">图 1 · 全路径总耗时（3 个 λ 之和）</div>
+    <div class="box" id="ch1"><div class="nojs">图表组件加载失败时，以上方明细表为准。</div></div>
+  </div>
+
+  <div class="chart">
+    <div class="cap">图 2 · 分 λ 耗时（按 λ 降序，每组 4 根柱）</div>
+    <div class="box" id="ch2"><div class="nojs">图表组件加载失败时，以上方明细表为准。</div></div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2>解的一致性</h2>
+  <div class="hint">非低 λ 段无病态多解区，三语解应当一致；差异仅来自浮点分支。</div>
+
+  <div class="chart">
+    <div class="cap">图 3 · obj 相对误差（对数轴，|obj_R − obj_Py| / |obj_R|；λ1 两数据组 obj 均位级一致，rel = 0）</div>
+    <div class="box" id="ch3"><div class="nojs">图表组件加载失败时，以上方明细表为准。</div></div>
+  </div>
+</section>
+
+<!-- ===== Conclusion ===== -->
+<section class="sec">
+  <h2>结论</h2>
+  <div class="concl">
+    <ol>
+      <li><b>R(MKL) 全面领先</b>：control 7.27s / cancer 9.26s，比 Numba v3 快 1.27× / 1.17×；较历史 Reference BLAS（135.1s / 162.3s）提速约 18×。</li>
+      <li><b>JIT 化收效</b>：Numba 从 11.32s / 12.04s 降至 9.24s / 10.87s（control −18%、cancer −10%）；新增 gradP（A@A.T 复用 + 稀疏感知）、proxBmain、tri 扫描、maxλ、对称 norm 等 6 个 JIT 内核，累计 11 个。</li>
+      <li><b>解高度一致</b>：排除低 λ 后，obj 最大相对误差 3.4×10⁻⁶（λ1 位级一致），稀疏结构 s_off 差异 ≤1 边——差异为多解区边界的浮点分支，非实现错误。</li>
+      <li><b>剩余差距</b>：R 仍快 1.17–1.27×，主因是 adaptive sieving 主循环与 Index/sub 管理的 Python 解释层尚未 JIT；换 BLAS（MKL）仍是 R 的第一性能杠杆。</li>
+    </ol>
+  </div>
+</section>
+
+<div class="foot">MARS（SSNAL + adaptive sieving + PCG）· 数据：prostmat.csv（p=6033）· 生成于 2026-09-25，顺序运行，未并行</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var RAW = {
+    lam: {
+      control: [0.944235563053099, 0.844842345889615, 0.745449128726131],
+      cancer:  [0.945723844146924, 0.846173965815669, 0.746624087484413]
+    },
+    R: {
+      control: { t:[1.9232,2.1360,2.4307], obj:[-3017.4815770,-3043.5505864,-3144.5666927], s:[68,621,1374] },
+      cancer:  { t:[1.9920,2.4202,4.0799], obj:[-3017.8935854,-3050.1925229,-3165.1850793], s:[90,617,1396] }
+    },
+    Py: {
+      control: { t:[2.5577,2.8422,3.0319], obj:[-3017.4815770,-3043.5535915,-3144.5560300], s:[68,621,1374] },
+      cancer:  { t:[2.5776,2.7804,4.7167], obj:[-3017.8935854,-3050.1962421,-3165.1867389], s:[90,618,1395] }
+    }
+  };
+  var groups = ["control", "cancer"];
+  // 实验实测 TOTAL（含 findA/初始化/路径外层开销；≠ timepath 之和）
+  var TOTAL = {
+    control: { R: 7.27, Py: 9.24 },
+    cancer:  { R: 9.26, Py: 10.87 }
+  };
+  var total = TOTAL;
+
+  function fmt(x, d){ return Number(x).toFixed(d); }
+  function sci(x, d){ if(x===0) return "0"; return Number(x).toExponential(d); }
+
+  groups.forEach(function(g){
+    var rows = "";
+    for (var k=0;k<3;k++){
+      var dObj = Math.abs(RAW.R[g].obj[k] - RAW.Py[g].obj[k]);
+      var rel = dObj / Math.abs(RAW.R[g].obj[k]);
+      var sDiff = RAW.R[g].s[k] === RAW.Py[g].s[k] ? "=" : (RAW.Py[g].s[k]-RAW.R[g].s[k]>0 ? "+1" : "-1");
+      rows += "<tr>" +
+        "<td>λ"+(k+1)+"  <span style='color:var(--muted);font-weight:400;font-variant-numeric:tabular-nums'>"+fmt(RAW.lam[g][k],3)+"</span></td>" +
+        "<td>"+fmt(RAW.R[g].t[k],2)+"</td><td>"+fmt(RAW.R[g].obj[k],4)+"</td><td>"+RAW.R[g].s[k]+"</td>" +
+        "<td>"+fmt(RAW.Py[g].t[k],2)+"</td><td>"+fmt(RAW.Py[g].obj[k],4)+"</td><td>"+RAW.Py[g].s[k]+"</td>" +
+        "<td>"+sci(dObj,2)+"</td><td>"+sci(rel,1)+"</td></tr>";
+    }
+    var spd = total[g].Py / total[g].R;
+    rows += "<tr class='subtotal'><td>总计 / 加速比</td><td>"+fmt(total[g].R,2)+"</td><td colspan='2'>—</td><td>"+
+            fmt(total[g].Py,2)+"</td><td colspan='2'>—</td><td colspan='2'>R 快 "+fmt(spd,2)+"×</td></tr>";
+    document.getElementById("tbl-"+g).innerHTML = rows;
+  });
+
+  var colorR = "#2456A6", colorPy = "#E8912D";
+  var baseTooltip = { trigger:"axis", triggerOn:"click", confine:true,
+                      renderMode:"richText",
+                      formatter:function(ps){
+                        var s="";
+                        ps.forEach(function(p){ s += p.marker + p.seriesName + "：" + p.value + String.fromCharCode(10); });
+                        return s;
+                      } };
+  var LABEL = { show:true, position:"top", fontSize:11, fontFamily:"Consolas,monospace" };
+
+  function draw(id, opt){
+    var el = document.getElementById(id);
+    if (typeof echarts === "undefined" || !el) return;   // 无网/加载失败保留占位文字
+    var ch = echarts.init(el);
+    ch.setOption(opt);
+  }
+
+  // ---- 图1：总耗时 ----
+  draw("ch1", {
+    title:{ text:"全路径总耗时（3 λ）", left:8, top:6, textStyle:{ fontSize:14, fontWeight:700 } },
+    tooltip: baseTooltip,
+    legend:{ top:32 },
+    grid:{ left:70, right:24, top:70, bottom:30, containLabel:true },
+    xAxis:{ type:"category", data:["R control","R cancer","Py control","Py cancer"],
+            axisLabel:{ fontSize:11, fontFamily:"Consolas,monospace" } },
+    yAxis:{ type:"value", name:"秒 (s)", axisLabel:{ fontSize:11, fontFamily:"Consolas,monospace" } },
+    series:[{ type:"bar", data:[
+      { value:Number(total.control.R.toFixed(2)), itemStyle:{ color:colorR } },
+      { value:Number(total.cancer.R.toFixed(2)),  itemStyle:{ color:colorR } },
+      { value:Number(total.control.Py.toFixed(2)),itemStyle:{ color:colorPy } },
+      { value:Number(total.cancer.Py.toFixed(2)), itemStyle:{ color:colorPy } }
+    ], label:Object.assign({}, LABEL, {formatter:function(p){ return p.value+" s"; }}),
+      barWidth:56,
+      itemStyle:{ borderRadius:[4,4,0,0] } }]
+  });
+
+  // ---- 图2：分 λ 耗时 ----
+  draw("ch2", {
+    title:{ text:"分 λ 耗时", left:8, top:6, textStyle:{ fontSize:14, fontWeight:700 } },
+    tooltip: baseTooltip,
+    legend:{ top:32, data:["R control","R cancer","Py control","Py cancer"] },
+    grid:{ left:70, right:24, top:70, bottom:30, containLabel:true },
+    xAxis:{ type:"category", data:["λ1 (95% maxλ)","λ2 (85% maxλ)","λ3 (75% maxλ)"],
+            axisLabel:{ fontSize:11 } },
+    yAxis:{ type:"value", name:"秒 (s)", axisLabel:{ fontSize:11, fontFamily:"Consolas,monospace" } },
+    series:[
+      { name:"R control", type:"bar", data:[1.92,2.14,2.43], itemStyle:{ color:colorR } },
+      { name:"R cancer",  type:"bar", data:[1.99,2.42,4.08], itemStyle:{ color:colorR, opacity:.55 } },
+      { name:"Py control",type:"bar", data:[2.56,2.84,3.03], itemStyle:{ color:colorPy } },
+      { name:"Py cancer", type:"bar", data:[2.58,2.78,4.72], itemStyle:{ color:colorPy, opacity:.55 } }
+    ]
+  });
+
+  // ---- 图3：obj 相对误差 ----
+  var cats = ["control λ2","control λ3","cancer λ2","cancer λ3"];
+  var rels = [], dObjs = [];
+  var pairs = [["control",1],["control",2],["cancer",1],["cancer",2]];
+  pairs.forEach(function(pair){
+    var g=pair[0], k=pair[1];
+    var dObj = Math.abs(RAW.R[g].obj[k] - RAW.Py[g].obj[k]);
+    dObjs.push(dObj);
+    rels.push(Number((dObj / Math.abs(RAW.R[g].obj[k])).toExponential(1).replace("e","e")));
+  });
+  draw("ch3", {
+    title:{ text:"obj 相对误差（|Δobj| / |obj_R|，对数轴）", left:8, top:6, textStyle:{ fontSize:14, fontWeight:700 } },
+    tooltip: Object.assign({}, baseTooltip, {
+      formatter:function(ps){
+        var i = ps[0].dataIndex;
+        return "Δobj = " + dObjs[i].toExponential(2) + String.fromCharCode(10) +
+               "rel = " + rels[i].toExponential(1);
+      }
+    }),
+    grid:{ left:70, right:24, top:50, bottom:30, containLabel:true },
+    xAxis:{ type:"category", data:cats, axisLabel:{ fontSize:11 } },
+    yAxis:{ type:"log", name:"相对误差", min:1e-7, max:1e-5,
+            axisLabel:{ fontSize:11, fontFamily:"Consolas,monospace" } },
+    series:[{ type:"bar", data:rels, label:{ show:true, position:"top", fontSize:11,
+             fontFamily:"Consolas,monospace",
+             formatter:function(p){ return p.value.toExponential(1); } },
+             itemStyle:{ color:"#2F9E44", borderRadius:[4,4,0,0] }, barWidth:48 }]
+  });
+})();
+</script>
+</body>
+</html>

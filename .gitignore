@@ -1,0 +1,33 @@
+# R
+.Rproj.user/
+.Rhistory
+.RData
+*.Rcheck/
+*.tar.gz
+**/src/*.o
+**/src/*.so
+**/src/*.dll
+**/src/*.dylib
+**/src/*.a
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
+
+# experiment / legacy dirs (not part of the public package)
+MARS_matlab/
+MARSexp/
+
+# temp / generated
+_tmp*.py
+**/_shots/
+**/_backup/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

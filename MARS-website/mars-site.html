@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARS — Sparse Precision Matrix Estimation (R &amp; Python)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23DC2626'/%3E%3Ccircle cx='10' cy='11' r='3' fill='%23FDE68A'/%3E%3Ccircle cx='22' cy='9' r='3' fill='%23F97316'/%3E%3Ccircle cx='21' cy='22' r='3' fill='%23FDBA74'/%3E%3Cpath d='M12.5 12.5 L19 10 M11.5 13.5 L19 20 M22 12 L21 19' stroke='%23FEE2E2' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#FBF7F4; --card:#FFFFFF; --ink:#2B1210; --muted:#8A5A52;
+    --line:#EFE0DA; --mars:#C2410C; --red:#DC2626; --ember:#F97316;
+    --dark:#160607; --dark2:#3A0F0E; --dark3:#7C1D1D;
+    --code:#1F0B0C; --codeink:#F3D9D0; --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{font-family:"Segoe UI","Helvetica Neue",-apple-system,sans-serif;
+       background:var(--bg); color:var(--ink); line-height:1.6; overflow:hidden;}
+  .wrap{max-width:1060px; margin:0 auto; padding:0 22px;}
+  /* nav */
+  .nav{position:fixed; top:0; left:0; right:0; z-index:60; background:rgba(22,6,7,.92);
+       backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+       border-bottom:1px solid rgba(220,38,38,.25);}
+  .nav .wrap{display:flex; align-items:center; gap:20px; height:54px; font-size:16px;}
+  .nav .brand{font-weight:800; color:#FEE2E2; letter-spacing:.4px; white-space:nowrap; text-decoration:none;}
+  .nav a{color:#D8A79E; text-decoration:none; font-weight:600; white-space:nowrap;
+         padding:4px 2px; border-bottom:2px solid transparent;}
+  .nav a:hover{color:#FEE2E2;}
+  .nav a.on{color:#FEE2E2; border-bottom-color:var(--ember);}
+  .nav .spacer{flex:1;}
+  @media(max-width:640px){
+    .nav .wrap{height:54px; gap:14px; overflow-x:auto; padding:0 14px; scrollbar-width:none;}
+    .nav .wrap::-webkit-scrollbar{display:none;}
+  }
+  /* views */
+  .view{display:none; height:calc(100vh - 55px); margin-top:55px; overflow-y:auto; padding:30px 0 40px;}
+  .view.active#view-home{padding:0; height:calc(100vh - 55px); overflow:hidden;}
+  .view.active{display:block;}
+  .view h2{font-size:24px; font-weight:800; color:var(--mars); display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+  .view h2 .no{font-size:13px; font-weight:800; color:var(--red); border:1.5px solid var(--red);
+               border-radius:6px; padding:2px 7px;}
+  .hint{font-size:15px; color:var(--muted); margin-bottom:16px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
+  /* home hero */
+  .hero-full{position:relative; height:100%; overflow:hidden; display:flex; align-items:center;
+             background:radial-gradient(1200px 700px at 75% -10%, #7C1D1D 0%, transparent 55%),
+                        radial-gradient(900px 600px at 10% 110%, #4A1212 0%, transparent 60%),
+                        linear-gradient(160deg,#160607 0%, #2A0C0D 45%, #4A1212 100%);}
+  .hero-full .bgmat{position:absolute; inset:0; width:100%; height:100%;}
+  .hero-inner{position:relative; z-index:2; width:100%; max-width:1060px; margin:0 auto; padding:0 22px;}
+  .hero-inner .kicker{font-size:14px; letter-spacing:3px; color:#E8A29A; text-transform:uppercase;}
+  .hero-inner h1{font-size:clamp(66px,12vw,150px); font-weight:800; line-height:1; color:#FFF1F0;
+                 letter-spacing:2px; margin-top:8px;}
+  .hero-inner .desc{font-size:19px; line-height:1.55; color:#D8A79E; margin-top:34px; max-width:720px;}
+  .hero-inner .desc .hl{color:#FFB37E; font-weight:700;}
+  .hero-inner .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:30px;}
+  .btn{display:inline-flex; align-items:center; gap:8px; font-size:14px; font-weight:700; text-decoration:none;
+       border-radius:9px; padding:9px 18px; transition:transform .12s ease;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn svg{width:15px; height:15px; fill:currentColor;}
+  .btn.primary{background:linear-gradient(180deg,#F97316,#DC2626); color:#FFF1F0;
+               box-shadow:0 8px 24px rgba(220,38,38,.35);}
+  .btn.ghost{border:1.5px solid rgba(249,115,22,.65); color:#FBC9C1;}
+  .btn.ghost:hover{border-color:var(--ember); color:#FEE2E2;}
+  .hero-inner .chips{display:flex; gap:12px; flex-wrap:wrap; margin-top:34px;}
+  .chip{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22);
+        border-radius:999px; padding:6px 16px; font-size:14px; color:#E8C9C3;}
+  /* concept */
+  .concept-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:16px;}
+  .concept{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:#FDFBFA;}
+  .concept h3{font-size:16px; color:var(--mars); margin-bottom:6px;}
+  .concept .eq{font-family:Consolas,Monaco,monospace; font-size:14.5px; background:#FBEEE9; border-radius:6px;
+               padding:2px 6px; display:inline-block; margin:2px 0;}
+  .concept p{font-size:15px; color:var(--muted);}
+  .svgbox{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:12px; overflow-x:auto;}
+  /* method */
+  .formula{font-family:Consolas,Monaco,monospace; font-size:16px; background:#FBEEE9; border-radius:10px;
+           padding:14px 18px; margin:10px 0; overflow-x:auto;}
+  .steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-top:14px;}
+  .step{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--card);}
+  .step .tag{font-size:12px; font-weight:800; color:var(--red); letter-spacing:1px;}
+  .step h3{font-size:17px; margin:4px 0 6px;}
+  .step p{font-size:15px; color:var(--muted);}
+  /* tabs */
+  .tabs{display:flex; gap:8px; position:relative; z-index:2;}
+  .tabbtn{font-family:inherit; font-size:16px; font-weight:700; padding:10px 20px; border:1px solid var(--line);
+          border-bottom:none; border-radius:10px 10px 0 0; background:#F6E9E3; color:var(--muted); cursor:pointer;}
+  .tabbtn.active{background:var(--code); color:var(--codeink);}
+  .tabpanel{display:none; background:var(--code); border-radius:0 12px 12px 12px; padding:18px 20px; overflow-x:auto;}
+  .tabpanel.show{display:block;}
+  .tabpanel pre{margin:0;}
+  .tabpanel code{font-family:Consolas,Monaco,monospace; font-size:14px; color:var(--codeink); white-space:pre;}
+  .tabpanel .cm{color:#B07A6E;}
+  /* demo */
+  .two-col{display:grid; grid-template-columns:1.35fr 1fr; gap:16px;}
+  @media(max-width:820px){.two-col{grid-template-columns:1fr;}}
+  .two-col > *{min-width:0;}
+  .figcard{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px;}
+  .figcard img{max-width:100%; display:block; border-radius:8px; margin:0 auto;}
+  .figcard h3{font-size:17px; margin-bottom:8px;}
+  .cap{font-size:13px; color:var(--muted); margin-top:6px;}
+  /* perf */
+  .chartbox{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-top:12px;}
+  .chartbox .box{width:100%; height:300px;}
+  table{width:100%; border-collapse:collapse; font-size:15px; margin-top:12px; background:var(--card);
+        border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  th,td{padding:9px 12px; text-align:right; border-bottom:1px solid var(--line);}
+  th{background:#F6E9E3; font-weight:700;}
+  th:first-child,td:first-child{text-align:left;}
+  td{font-variant-numeric:tabular-nums;}
+  /* cite */
+  .cite{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
+  .cite p{font-size:16px; overflow-wrap:break-word;}
+  .bibbox{background:var(--code); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-top:12px; overflow-x:auto;}
+  .bibbox code{font-family:Consolas,Monaco,monospace; font-size:14px; color:var(--codeink); white-space:pre;}
+  .foot{margin-top:28px; font-size:13px; color:var(--muted); text-align:center;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="#home">MARS</a>
+    <span class="spacer"></span>
+    <a href="#model" data-v="model">Method</a>
+    <a href="#usage" data-v="usage">Usage</a>
+    <a href="#demo" data-v="demo">Case</a>
+    <a href="https://github.com/QianLI-QL-XA/MARS" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</nav>
+
+<!-- ===== View: Home ===== -->
+<section class="view active" id="view-home">
+  <div class="hero-full">
+    <canvas class="bgmat" id="bgnet" aria-hidden="true"></canvas>
+    <div class="hero-inner">
+      <div class="kicker">High-Dimensional Sparse Precision Matrix Estimation</div>
+      <h1>MARS</h1>
+      <div class="desc">
+        Given p variables and n samples (p&nbsp;&gg;&nbsp;n), MARS estimates a
+        sparse precision matrix &Omega;&nbsp;=&nbsp;&Sigma;&minus;&sup1;
+        under the l1-penalized D-trace loss. Its sparsity pattern reveals the
+        <span class="hl">conditional-dependence graph</span> among variables.
+        R and Python implementations powered by a highly efficient adaptive
+        sieving + semismooth Newton augmented Lagrangian (AS&ndash;SSNAL&ndash;PCG) algorithm.
+      </div>
+      <div class="btns">
+        <a class="btn primary" href="https://github.com/QianLI-QL-XA/MARS" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+        <a class="btn ghost" href="https://jmlr.org/papers/v24/21-0699.html" target="_blank" rel="noopener">JMLR Paper</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== View: Model ===== -->
+<section class="view" id="view-model">
+  <div class="wrap">
+    <h2><span class="no">01</span>Precision Matrix = Conditional Dependence = Graph</h2>
+    <div class="hint">MARS estimates the precision matrix (the inverse covariance matrix): its entries encode the conditional dependence between two variables given all the others.</div>
+    <div class="concept-grid">
+      <div class="concept">
+        <h3>Precision matrix</h3>
+        <div class="eq">&Omega; = &Sigma;&minus;&sup1;</div>
+        <p>The inverse of the covariance matrix &Sigma;. Diagonal entries relate to partial variances; off-diagonal entries relate to conditional dependence.</p>
+      </div>
+      <div class="concept">
+        <h3>Conditional dependence</h3>
+        <div class="eq">&Omega;<sub>ij</sub> = 0 &hArr; i&nbsp;&perp;&nbsp;j&nbsp;|&nbsp;others</div>
+        <p>In a Gaussian graphical model, &Omega;<sub>ij</sub> = 0 iff variables i and j are conditionally independent given all other variables.</p>
+      </div>
+      <div class="concept">
+        <h3>Sparse graph</h3>
+        <div class="eq">edge &hArr; &Omega;<sub>ij</sub> &ne; 0</div>
+        <p>The sparsity pattern defines a graph: nodes = variables, edges = conditional dependence. The l1 penalty keeps the estimate sparse when p &gg; n.</p>
+      </div>
+    </div>
+    <div class="svgbox">
+      <svg viewBox="0 0 760 230" width="100%" role="img" aria-label="Equivalence between the sparsity pattern of the precision matrix and the conditional-dependence graph">
+        <text x="211" y="24" font-size="13" fill="#8A5A52" text-anchor="middle">Sparsity pattern of &Omega; (7&times;7)</text>
+        <g font-size="10" fill="#8A5A52">
+<text x="154" y="45" text-anchor="middle">1</text><text x="173" y="45" text-anchor="middle">2</text><text x="192" y="45" text-anchor="middle">3</text><text x="211" y="45" text-anchor="middle">4</text><text x="230" y="45" text-anchor="middle">5</text><text x="249" y="45" text-anchor="middle">6</text><text x="268" y="45" text-anchor="middle">7</text>
+<text x="138" y="65" text-anchor="end">1</text><text x="138" y="84" text-anchor="end">2</text><text x="138" y="103" text-anchor="end">3</text><text x="138" y="122" text-anchor="end">4</text><text x="138" y="141" text-anchor="end">5</text><text x="138" y="160" text-anchor="end">6</text><text x="138" y="179" text-anchor="end">7</text>
+        </g>
+        <g><rect x="145" y="52" width="19" height="19" fill="#DC2626" opacity=".92"/>
+<rect x="164" y="52" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="183" y="52" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="202" y="52" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="221" y="52" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="240" y="52" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="259" y="52" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="145" y="71" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="164" y="71" width="19" height="19" fill="#DC2626" opacity=".92"/>
+<rect x="183" y="71" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="202" y="71" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="221" y="71" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="240" y="71" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="259" y="71" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="145" y="90" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="164" y="90" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="183" y="90" width="19" height="19" fill="#DC2626" opacity=".92"/>
+<rect x="202" y="90" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="221" y="90" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="240" y="90" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="259" y="90" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="145" y="109" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="164" y="109" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="183" y="109" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="202" y="109" width="19" height="19" fill="#DC2626" opacity=".92"/>
+<rect x="221" y="109" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="240" y="109" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="259" y="109" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="145" y="128" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="164" y="128" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="183" y="128" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="202" y="128" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="221" y="128" width="19" height="19" fill="#DC2626" opacity=".92"/>
+<rect x="240" y="128" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="259" y="128" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="145" y="147" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="164" y="147" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="183" y="147" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="202" y="147" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="221" y="147" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="240" y="147" width="19" height="19" fill="#DC2626" opacity=".92"/>
+<rect x="259" y="147" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="145" y="166" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="164" y="166" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="183" y="166" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="202" y="166" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="221" y="166" width="19" height="19" fill="none" stroke="rgba(253,235,234,.28)" stroke-width="1"/>
+<rect x="240" y="166" width="19" height="19" fill="#F97316" opacity=".85"/>
+<rect x="259" y="166" width="19" height="19" fill="#DC2626" opacity=".92"/>
+        </g>
+        <g><line x1="520" y1="25" x2="586" y2="57" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="586" y1="57" x2="603" y2="129" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="603" y1="129" x2="557" y2="187" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="557" y1="187" x2="483" y2="187" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="483" y1="187" x2="437" y2="129" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="437" y1="129" x2="454" y2="57" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="520" y1="25" x2="454" y2="57" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="586" y1="57" x2="483" y2="187" stroke="#F97316" stroke-width="1.8" opacity=".9"/><line x1="603" y1="129" x2="454" y2="57" stroke="#F97316" stroke-width="1.8" opacity=".9"/>
+          <circle cx="520" cy="25" r="12" fill="#FDEBEA" stroke="#DC2626" stroke-width="2"/><text x="520" y="29" font-size="11" fill="#7F1D1D" text-anchor="middle">1</text><circle cx="586" cy="57" r="12" fill="#FDEBEA" stroke="#DC2626" stroke-width="2"/><text x="586" y="61" font-size="11" fill="#7F1D1D" text-anchor="middle">2</text><circle cx="603" cy="129" r="12" fill="#FDEBEA" stroke="#DC2626" stroke-width="2"/><text x="603" y="133" font-size="11" fill="#7F1D1D" text-anchor="middle">3</text><circle cx="557" cy="187" r="12" fill="#FDEBEA" stroke="#DC2626" stroke-width="2"/><text x="557" y="191" font-size="11" fill="#7F1D1D" text-anchor="middle">4</text><circle cx="483" cy="187" r="12" fill="#FDEBEA" stroke="#DC2626" stroke-width="2"/><text x="483" y="191" font-size="11" fill="#7F1D1D" text-anchor="middle">5</text><circle cx="437" cy="129" r="12" fill="#FDEBEA" stroke="#DC2626" stroke-width="2"/><text x="437" y="133" font-size="11" fill="#7F1D1D" text-anchor="middle">6</text><circle cx="454" cy="57" r="12" fill="#FDEBEA" stroke="#DC2626" stroke-width="2"/><text x="454" y="61" font-size="11" fill="#7F1D1D" text-anchor="middle">7</text>
+        </g>
+        <text x="370" y="106" font-size="30" fill="#C2410C" text-anchor="middle">&hArr;</text>
+        <text x="370" y="130" font-size="11" fill="#8A5A52" text-anchor="middle">pattern &harr; graph</text>
+        <text x="180" y="220" font-size="12" fill="#8A5A52">blank: &Omega;ij = 0 &rArr; no edge;&nbsp;&nbsp;orange: &Omega;ij &ne; 0 &rArr; edge;&nbsp;&nbsp;red: diagonal &Omega;ii</text>
+      </svg>
+    </div>    </div>
+  </div>
+
+  <div class="wrap">
+    <h2><span class="no">02</span>Model &amp; Algorithm</h2>
+    <div class="hint">Solves the l1-penalized D-trace loss by semismooth Newton augmented Lagrangian combined with adaptive sieving technique.</div>
+    <div class="card">
+      <div class="formula">min<sub>&Omega;&isin;S&sup;p;</sub> &nbsp; &frac12; &Vert;&Omega; A&Vert;<sub>F</sub>&sup2; &minus; &lang;&Omega;, I&rang; + &lambda; &Vert;&Omega;&Vert;<sub>1,off</sub></div>
+      <p style="font-size:15px;color:var(--muted);">
+        A is built from the centered sample matrix via thin SVD (A = U diag(s)/&radic;(n&minus;1));
+        &Vert;&Omega;&Vert;<sub>1,off</sub> = &Sigma;<sub>i&ne;j</sub>|&Omega;<sub>ij</sub>| penalizes
+        off-diagonal entries to induce a sparse graph; &lambda; controls sparsity. The full
+        p&times;p Gram matrix is never formed.
+      </p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Adaptive sieving (AS)</h3>
+        <p>At each ALM iteration, screens the subproblem first: candidate non-zero edges are gathered from residuals, keeping the active set far smaller than p&sup2;.</p>
+      </div>
+      <div class="step">
+        <h3>SSN (SSNAL)</h3>
+        <p>Semismooth Newton then solves the screened active-set subproblem inside the augmented Lagrangian framework with second-order convergence.</p>
+      </div>
+      <div class="step">
+        <h3>Inner PCG</h3>
+        <p>Preconditioned conjugate gradient solves the Newton systems; the gap &lt; tol stopping rule makes optimality verifiable.</p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+
+
+<!-- ===== View: Usage ===== -->
+<section class="view" id="view-usage">
+  <div class="wrap">
+    <h2><span class="no">03</span>Install &amp; Quick Start</h2>
+    <div class="hint">R and Python, same algorithm, same solution path. Full parameter reference in the package README / user guide.</div>
+    <div class="tabs">
+      <button class="tabbtn active" onclick="switchTab('tabR', this)">R package MARS</button>
+      <button class="tabbtn" onclick="switchTab('tabPy', this)">Python package mars</button>
+    </div>
+    <div class="tabpanel show" id="tabR">
+<pre><code><span class="cm"># install (needs Intel MKL build of R, e.g. Microsoft R Open 4.x, + Rcpp / RcppArmadillo / Matrix + a C++ toolchain)</span>
+install.packages(c("Rcpp", "RcppArmadillo", "Matrix"))
+install.packages(".", repos = NULL, type = "source")
+
+<span class="cm"># solve a lambda path: p = 3000, n = 50 synthetic data</span>
+library(MARS)
+set.seed(1)
+X &lt;- matrix(runif(3000 * 50), 3000, 50)
+sol &lt;- MARS(X, stopmethod = "bigs",
+            Lambdapath = seq(1, 0.5, -0.01), printmain = TRUE)
+str(sol)          <span class="cm"># Omegapath / Lambdapath / timepath</span>
+
+<span class="cm"># nonzero pattern of Omega is the graph: Omega[i,j] != 0 &lt;=&gt; i, j conditionally dependent</span>
+Omega &lt;- as.matrix(sol$Omegapath[[1]])
+</code></pre>
+    </div>
+    <div class="tabpanel" id="tabPy">
+<pre><code><span class="cm"># install (needs Python 3.9+; NumPy core, optional Numba JIT acceleration &mdash; no MKL required)</span>
+pip install -e "./MARS_python[jit]"
+
+<span class="cm"># solve: p = 3000, n = 50</span>
+import numpy as np
+from mars import mars_path, maxLambda
+
+rng = np.random.default_rng(0)
+X = rng.standard_normal((3000, 50))
+lam = 0.95 * maxLambda(X)          <span class="cm"># data-dependent max lambda</span>
+Omegapath, Lambdapath, timepath = mars_path(
+    X, np.array([lam]), stoptol=1e-6, maxiter=10, stopmethod="fix")
+
+Omega = Omegapath[0]               <span class="cm"># 3000x3000 symmetric; nonzero pattern = graph</span>
+</code></pre>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-top:46px;">
+    <h2><span class="no">04</span>Citation</h2>
+    <div class="cite">
+      <p>
+        Qian LI, Binyan Jiang, and Defeng Sun.
+        <b>"MARS: A second-order reduction algorithm for high-dimensional sparse
+        precision matrices estimation."</b>
+        <i>Journal of Machine Learning Research</i>, 24 (2023) 1-44.
+        <a href="https://jmlr.org/papers/v24/21-0699.html" target="_blank" rel="noopener">Paper link</a>
+      </p>
+      <p style="font-size:15px;color:var(--muted);margin-top:10px;">
+        Code: R package MARS 0.2.0 (src/MARSc.cpp, RcppArmadillo) and Python
+        package mars (mars/mars_py.py, NumPy + Numba JIT).
+      </p>
+      <div class="bibbox"><code id="bibtext">@article{li2023mars,
+  author  = {Qian Li and Binyan Jiang and Defeng Sun},
+  title   = {MARS: A second-order reduction algorithm for high-dimensional sparse precision matrices estimation},
+  journal = {Journal of Machine Learning Research},
+  volume  = {24},
+  number  = {110},
+  pages   = {1--44},
+  year    = {2023},
+  url     = {https://jmlr.org/papers/v24/21-0699.html}
+}</code></div>
+    </div>
+    <div class="foot">MARS &mdash; sparse precision matrix estimation &middot; high-dimensional graphical models &middot; conditional dependence &middot; AS&ndash;SSNAL&ndash;PCG &middot; R / Python</div>
+  </div>
+
+</section>
+
+<!-- ===== View: Demo ===== -->
+<section class="view" id="view-demo">
+  <div class="wrap">
+    <h2><span class="no">05</span>Real-Data Case: Prostate Gene Networks</h2>
+    <div class="hint">prostmat.csv: expression activity of p = 6033 genes, 50 controls + 52 prostate cancer patients; lambda chosen by five-fold cross-validation, z-score standardized. Data source: Singh et al. (2002), Cancer Cell 1(2):203&ndash;209.</div>
+    <div class="two-col">
+      <div class="figcard">
+        <h3>Reproduction of Figure 4</h3>
+        <img src="assets/ref_fig.png" alt="Gene networks estimated by MARS on the prostate data (control and cancer groups)">
+        <div class="cap">Graphs chosen by five-fold cross-validation: left = control (n = 50), right = prostate cancer (n = 52)</div>
+      </div>
+      <div class="figcard">
+        <h3>Edge = Conditional Dependence</h3>
+        <p style="font-size:15px;color:var(--muted);">An edge links two genes whose expression activity remains correlated after conditioning on all other genes. Red edges correspond to
+        <b style="color:var(--mars)">&Omega;<sub>ij</sub> &ne; 0</b>, i.e. conditional dependence; gene pairs without an edge are conditionally independent.</p>
+        <table>
+          <colgroup><col style="width:34%"><col style="width:33%"><col style="width:33%"></colgroup>
+          <tr><th>Setting</th><th>control</th><th>cancer</th></tr>
+          <tr><td>Sample size n</td><td>50</td><td>52</td></tr>
+          <tr><td>Variables p</td><td colspan="2">6033</td></tr>
+          <tr><td>&lambda; / max&lambda;</td><td colspan="2">0.65 (low-lambda sparse solution)</td></tr>
+          <tr><td>Stopping tolerance</td><td colspan="2">1e-6 (gap &lt; tol)</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <h2><span class="no">06</span>Performance</h2>
+    <div class="hint">Same host, sequential runs; lambda path at 95% / 85% / 75% of max-lambda, stoptol = 1e-6, maxiter = 10.</div>
+    <div class="chartbox">
+      <div class="box" id="perfChart"><div style="color:var(--muted);font-size:12px;">If the chart fails to load, use the table below.</div></div>
+    </div>
+    <table>
+      <colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup>
+      <tr><th>Implementation</th><th>control (n=50)</th><th>cancer (n=52)</th><th>vs R(MKL)</th></tr>
+      <tr><td>R 4.6.1 + Intel MKL</td><td>7.27 s</td><td>9.26 s</td><td>1.00&times;</td></tr>
+      <tr><td>Python + Numba (11 kernels)</td><td>9.24 s</td><td>10.87 s</td><td>1.17&ndash;1.27&times;</td></tr>
+      <tr><td>Python pure NumPy</td><td>14.75 s</td><td>17.55 s</td><td>1.9&ndash;2.0&times;</td></tr>
+    </table>
+  </div>
+
+</section>
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var chartInited = false;
+
+  /* Glowing network background: scattered points, a subset pairwise linked
+     (local clusters + long-range edges), linked pairs light up one by one. */
+  function buildNetworkBG(){
+    var cv = document.getElementById("bgnet");
+    if (!cv || !cv.getContext) return;
+    var ctx = cv.getContext("2d");
+    var W = 1000, H = 620;
+    var DPR = Math.min(window.devicePixelRatio || 1, 2);
+    function fit(){
+      var r = cv.parentElement.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      cv.width = Math.round(r.width * DPR);
+      cv.height = Math.round(r.height * DPR);
+      ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+    }
+    fit();
+    window.addEventListener("resize", fit);
+
+    var N = 150, pts = [];
+    for (var i = 0; i < N; i++){
+      pts.push({
+        x: 90 + Math.random() * (W - 140),
+        y: 24 + Math.random() * (H - 48),
+        r: 1.5 + Math.random() * 1.5,
+        a: .30 + Math.random() * .25,
+        tw: Math.random() * 6.283
+      });
+    }
+    var edges = [], E = 64, tries = 0;
+    while (edges.length < E && tries < 3000){
+      tries++;
+      var u = (Math.random() * N) | 0, v = (Math.random() * N) | 0;
+      if (u === v) continue;
+      var dx = pts[u].x - pts[v].x, dy = pts[u].y - pts[v].y, d2 = dx * dx + dy * dy;
+      var ok = (Math.random() < .5) ? (d2 < 165 * 165) : (d2 > 95 * 95 && d2 < 330 * 330);
+      if (!ok) continue;
+      var dup = false;
+      for (var e2 = 0; e2 < edges.length; e2++){
+        if ((edges[e2][0] === u && edges[e2][1] === v) || (edges[e2][0] === v && edges[e2][1] === u)){ dup = true; break; }
+      }
+      if (dup) continue;
+      edges.push([u, v]);
+    }
+
+    function glowDot(x, y, rad, g){
+      var gg = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      gg.addColorStop(0, "rgba(255,232,210," + (.92 * g) + ")");
+      gg.addColorStop(.16, "rgba(249,115,22," + (.60 * g) + ")");
+      gg.addColorStop(.48, "rgba(249,115,22," + (.20 * g) + ")");
+      gg.addColorStop(1, "rgba(249,115,22,0)");
+      ctx.fillStyle = gg;
+      ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+
+    var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var ti = 0, tPrev = 0, OFF = 350;
+    function draw(ts){
+      var t = (ts || 0) + OFF;
+      if (!reduced && t - tPrev > 1000){ ti = (ti + 1) % Math.max(edges.length, 1); tPrev = t; }
+      var ph = reduced ? .5 : (t % 1000) / 1000;
+      var g = Math.sin(Math.PI * ph);   /* 0 -> 1 -> 0 smooth bump, no floor */
+
+      ctx.clearRect(0, 0, W, H);
+      /* edges: active pair fades in and out, with a soft halo line under it */
+      ctx.lineCap = "round";
+      for (var k = 0; k < edges.length; k++){
+        var e = edges[k];
+        ctx.beginPath();
+        ctx.moveTo(pts[e[0]].x, pts[e[0]].y);
+        ctx.lineTo(pts[e[1]].x, pts[e[1]].y);
+        if (k === ti){
+          ctx.strokeStyle = "rgba(249,115,22," + (.09 * g) + ")";
+          ctx.lineWidth = 5 + 3 * g;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(pts[e[0]].x, pts[e[0]].y);
+          ctx.lineTo(pts[e[1]].x, pts[e[1]].y);
+          ctx.strokeStyle = "rgba(249,115,22," + (.13 + .55 * g) + ")";
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = "rgba(232,162,154,.07)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+      /* base points with gentle twinkle */
+      for (var q = 0; q < N; q++){
+        var p = pts[q];
+        var tw = .06 * Math.sin(t / 700 + p.tw);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 6.283);
+        ctx.fillStyle = "rgba(232,162,154," + Math.max(.08, p.a + tw) + ")";
+        ctx.fill();
+      }
+      /* active linked pair: breathing cores + soft glow */
+      if (edges.length){
+        var ae = edges[ti];
+        var pl = pts[ae[0]], pr = pts[ae[1]];
+        var cr = 2.2 + 1.8 * g;
+        var cg = ctx.createRadialGradient(pl.x, pl.y, 0, pl.x, pl.y, cr + 4);
+        cg.addColorStop(0, "rgba(255,246,236," + (.95 * g) + ")");
+        cg.addColorStop(.55, "rgba(255,214,178," + (.5 * g) + ")");
+        cg.addColorStop(1, "rgba(255,214,178,0)");
+        ctx.fillStyle = cg;
+        ctx.fillRect(pl.x - cr - 4, pl.y - cr - 4, (cr + 4) * 2, (cr + 4) * 2);
+        var cg2 = ctx.createRadialGradient(pr.x, pr.y, 0, pr.x, pr.y, cr + 4);
+        cg2.addColorStop(0, "rgba(255,246,236," + (.95 * g) + ")");
+        cg2.addColorStop(.55, "rgba(255,214,178," + (.5 * g) + ")");
+        cg2.addColorStop(1, "rgba(255,214,178,0)");
+        ctx.fillStyle = cg2;
+        ctx.fillRect(pr.x - cr - 4, pr.y - cr - 4, (cr + 4) * 2, (cr + 4) * 2);
+        glowDot(pl.x, pl.y, 26, g);
+        glowDot(pr.x, pr.y, 26, g);
+      }
+    }
+    draw(0);                    /* first frame mid-glow, no JS-dependency gap */
+    if (!reduced) requestAnimationFrame(function loop(ts){
+      draw(ts);
+      requestAnimationFrame(loop);
+    });
+  }
+  buildNetworkBG();
+
+  function switchTab(id, btn){
+    document.querySelectorAll(".tabbtn").forEach(function(b){ b.classList.remove("active"); });
+    document.querySelectorAll(".tabpanel").forEach(function(p){ p.classList.remove("show"); });
+    btn.classList.add("active");
+    document.getElementById(id).classList.add("show");
+  }
+  window.switchTab = switchTab;
+
+  function showView(name){
+    document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+    document.querySelectorAll(".nav a[data-v]").forEach(function(a){
+      a.classList.toggle("on", a.getAttribute("data-v") === name);
+    });
+    var v = document.getElementById("view-" + name);
+    if (v) v.classList.add("active");
+    if (name === "demo"){ initChart(); }
+  }
+
+  function route(){
+    var h = (location.hash || "#home").replace("#", "");
+    if (h === "method") h = "model";
+    if (h === "perf") h = "demo";
+    if (h === "cite") h = "usage";
+    if (!document.getElementById("view-" + h)) h = "home";
+    showView(h);
+  }
+
+  function initChart(){
+    var el = document.getElementById("perfChart");
+    if (chartInited || typeof echarts === "undefined" || !el) return;
+    chartInited = true;
+    var ch = echarts.init(el);
+    ch.setOption({
+      title: { text: "Real-data full-path time (3 lambdas)", left: 8, top: 6, textStyle: { fontSize: 14, fontWeight: 700, color: "#2B1210" } },
+      tooltip: { trigger: "axis", triggerOn: "click", confine: true, renderMode: "richText",
+                 formatter: function(ps){ var s=""; ps.forEach(function(p){ s += p.marker + p.seriesName + ": " + p.value + " s" + String.fromCharCode(10); }); return s; } },
+      legend: { top: 32, textStyle: { color: "#2B1210" } },
+      grid: { left: 64, right: 20, top: 70, bottom: 28, containLabel: true },
+      xAxis: { type: "category", data: ["R + MKL", "Python + Numba", "Python NumPy"],
+               axisLabel: { fontSize: 11, fontFamily: "Consolas,monospace", color: "#5A3A34" } },
+      yAxis: { type: "value", name: "seconds", axisLabel: { fontSize: 11, fontFamily: "Consolas,monospace", color: "#5A3A34" } },
+      series: [
+        { name: "control", type: "bar", data: [7.27, 9.24, 14.75], itemStyle: { color: "#DC2626" },
+          label: { show: true, position: "top", fontSize: 11, color: "#2B1210" } },
+        { name: "cancer", type: "bar", data: [9.26, 10.87, 17.55], itemStyle: { color: "#F97316", opacity: .9 },
+          label: { show: true, position: "top", fontSize: 11, color: "#2B1210" } }
+      ]
+    });
+  }
+
+  window.addEventListener("hashchange", route);
+  window.addEventListener("resize", function(){
+    if (chartInited){ var c = echarts.getInstanceByDom(document.getElementById("perfChart")); if (c) c.resize(); }
+  });
+  route();
+})();
+</script>
+</body>
+</html>

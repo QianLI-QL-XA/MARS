@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARS — 高维稀疏精度矩阵估计（R 与 Python）</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B3A6B'/%3E%3Ccircle cx='10' cy='11' r='3' fill='%23F5A623'/%3E%3Ccircle cx='22' cy='9' r='3' fill='%233B82F6'/%3E%3Ccircle cx='21' cy='22' r='3' fill='%234ADE80'/%3E%3Cpath d='M12.5 12.5 L19 10 M11.5 13.5 L19 20 M22 12 L21 19' stroke='%23E2E8F0' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#F5F7FA; --card:#FFFFFF; --ink:#16233B; --muted:#5A6B85;
+    --line:#E2E8F0; --navy:#1B3A6B; --blue:#3B82F6; --amber:#F5A623;
+    --green:#4ADE80; --code:#0F1B2E; --codeink:#D7E3F4;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:"Segoe UI","Microsoft YaHei",-apple-system,sans-serif;
+       background:var(--bg); color:var(--ink); line-height:1.65; padding-bottom:56px;}
+  .wrap{max-width:1060px; margin:0 auto; padding:0 20px;}
+  /* nav */
+  .nav{position:sticky; top:0; z-index:50; background:rgba(255,255,255,.92);
+       backdrop-filter:blur(8px); border-bottom:1px solid var(--line);}
+  .nav .wrap{display:flex; align-items:center; gap:22px; height:54px; font-size:14px;}
+  .nav .brand{font-weight:800; color:var(--navy); letter-spacing:.4px; display:flex; align-items:center; gap:8px;}
+  .nav a{color:var(--muted); text-decoration:none; font-weight:600;}
+  .nav a:hover{color:var(--navy);}
+  .nav .spacer{flex:1;}
+  /* hero */
+  .hero{background:linear-gradient(135deg,#12294F 0%,#1B3A6B 55%,#274E8F 100%); color:#fff; padding:64px 0 58px;}
+  .hero .kicker{font-size:13px; letter-spacing:2px; color:#9DB8E8; text-transform:uppercase;}
+  .hero h1{font-size:clamp(28px,4vw,44px); font-weight:800; line-height:1.25; margin-top:10px;}
+  .hero .lead{font-size:16px; color:#C9DAF4; margin-top:16px; max-width:760px;}
+  .hero .chips{display:flex; gap:10px; flex-wrap:wrap; margin-top:22px;}
+  .chip{background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.25);
+        border-radius:999px; padding:6px 14px; font-size:13px; color:#E7EFFB;}
+  .hero .stats{display:flex; gap:14px; flex-wrap:wrap; margin-top:30px;}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.18);
+        border-radius:12px; padding:10px 16px; min-width:118px;}
+  .stat .v{font-size:22px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .stat .l{font-size:12px; color:#C9DAF4; margin-top:2px;}
+  /* sections */
+  .sec{margin-top:44px;}
+  .sec h2{font-size:21px; font-weight:800; color:var(--navy); display:flex; align-items:center; gap:10px;}
+  .sec h2 .no{font-size:12px; font-weight:800; color:var(--blue); border:1.5px solid var(--blue);
+              border-radius:6px; padding:2px 7px;}
+  .sec .hint{font-size:13px; color:var(--muted); margin:8px 0 18px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
+  /* concept: three boxes + svg */
+  .concept-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-bottom:18px;}
+  .concept{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:#FBFCFE;}
+  .concept h3{font-size:14px; color:var(--navy); margin-bottom:6px;}
+  .concept .eq{font-family:Consolas,Monaco,monospace; font-size:13px; background:#EEF3FB; border-radius:6px; padding:2px 6px; display:inline-block; margin:2px 0;}
+  .concept p{font-size:13px; color:var(--muted);}
+  .svgbox{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; overflow-x:auto;}
+  /* formula + algo */
+  .formula{font-family:Consolas,Monaco,monospace; font-size:14px; background:#EEF3FB; border-radius:10px; padding:14px 18px; margin:10px 0; overflow-x:auto;}
+  .steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:14px;}
+  .step{border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .step .tag{font-size:12px; font-weight:800; color:var(--blue); letter-spacing:1px;}
+  .step h3{font-size:15px; margin:4px 0 6px;}
+  .step p{font-size:13px; color:var(--muted);}
+  /* tabs */
+  .tabs{display:flex; gap:8px; margin-bottom:0; position:relative; z-index:2;}
+  .tabbtn{font-family:inherit; font-size:14px; font-weight:700; padding:10px 20px; border:1px solid var(--line);
+          border-bottom:none; border-radius:10px 10px 0 0; background:#EEF2F9; color:var(--muted);
+          cursor:pointer;}
+  .tabbtn.active{background:var(--code); color:#fff;}
+  .tabpanel{display:none; background:var(--code); border-radius:0 12px 12px 12px; padding:18px 20px; overflow-x:auto;}
+  .tabpanel.show{display:block;}
+  .tabpanel pre{margin:0;}
+  .tabpanel code{font-family:Consolas,Monaco,monospace; font-size:13px; color:var(--codeink); white-space:pre;}
+  .tabpanel .cm{color:#7FA3CC;}
+  /* figure */
+  .figure{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px;}
+  .figure img{width:100%; max-width:820px; display:block; margin:0 auto; border-radius:8px;}
+  .figure .cap{font-size:13px; color:var(--muted); text-align:center; margin-top:10px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:820px){.two-col{grid-template-columns:1fr;}}
+  .two-col > *{min-width:0;}
+  .figcard{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px;}
+  .figcard img{max-width:100%; display:block; border-radius:8px; margin:0 auto;}
+  .figcard h3{font-size:15px; margin-bottom:8px;}
+  .cite p{overflow-wrap:break-word;}
+  /* perf chart */
+  .chartbox{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-top:12px;}
+  .chartbox .box{width:100%; height:340px;}
+  table{width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; background:var(--card);
+        border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  th,td{padding:9px 12px; text-align:right; border-bottom:1px solid var(--line);}
+  th{background:#EEF2F9; font-weight:700;}
+  th:first-child,td:first-child{text-align:left;}
+  td{font-variant-numeric:tabular-nums;}
+  /* citation */
+  .cite{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
+  .cite p{font-size:14px;}
+  .foot{margin-top:36px; font-size:12px; color:var(--muted); text-align:center;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <div class="brand">MARS</div>
+    <a href="#concept">图模型</a>
+    <a href="#method">方法</a>
+    <a href="#usage">使用</a>
+    <a href="#demo">案例</a>
+    <a href="#perf">性能</a>
+    <span class="spacer"></span>
+    <a href="https://jmlr.org/papers/v24/21-0699.html" target="_blank" rel="noopener">JMLR 论文</a>
+  </div>
+</nav>
+
+<!-- ===== Hero ===== -->
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">High-Dimensional Sparse Precision Matrix Estimation</div>
+    <h1>MARS：稀疏精度矩阵估计软件包</h1>
+    <div class="lead">
+      在给定 <b>p 个变量、n 个样本</b>（高维场景 p ≫ n）时，MARS 用
+      l1 惩罚的 D-trace 损失估计<b>稀疏精度矩阵</b> Ω = Σ⁻¹ —— 其非零模式
+      直接给出变量之间的<b>条件相关性图</b>。R 与 Python 双实现，
+      核心为自适应筛选 + 半光滑牛顿增广拉格朗日（AS–SSNAL–PCG）算法。
+    </div>
+    <div class="chips">
+      <span class="chip">R 包 MARS 0.2.0</span>
+      <span class="chip">Python 包 mars</span>
+      <span class="chip">Numba JIT 11 内核</span>
+      <span class="chip">R CMD check 全绿</span>
+      <span class="chip">JMLR 24 (2023)</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v">p ≫ n</div><div class="l">面向高维样本</div></div>
+      <div class="stat"><div class="v">6033</div><div class="l">真实数据变量数</div></div>
+      <div class="stat"><div class="v">~18×</div><div class="l">R+MKL 相对提速</div></div>
+      <div class="stat"><div class="v">1e-4</div><div class="l">停机容差</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== Concept ===== -->
+  <section class="sec" id="concept">
+    <h2><span class="no">01</span>精度矩阵 = 条件相关 = 图</h2>
+    <div class="hint">MARS 估计的对象是精度矩阵（协方差矩阵的逆），它刻画的是两个变量在给定其余所有变量后的条件相关关系。</div>
+    <div class="concept-grid">
+      <div class="concept">
+        <h3>精度矩阵</h3>
+        <div class="eq">Ω = Σ⁻¹</div>
+        <p>协方差矩阵 Σ 的逆。它的对角元与偏方差有关，非对角元与条件相关有关。</p>
+      </div>
+      <div class="concept">
+        <h3>条件相关</h3>
+        <div class="eq">Ω<sub>ij</sub> = 0 ⟺ i ⊥ j | 其余变量</div>
+        <p>对高斯图模型：Ω<sub>ij</sub> = 0 当且仅当变量 i 与 j 在给定其余变量时条件独立。</p>
+      </div>
+      <div class="concept">
+        <h3>稀疏图</h3>
+        <div class="eq">边 = Ω<sub>ij</sub> ≠ 0</div>
+        <p>非零模式定义一张图：节点 = 变量，边 = 条件相关。l1 惩罚保证 p ≫ n 下估计稀疏。</p>
+      </div>
+    </div>
+    <div class="svgbox">
+      <svg viewBox="0 0 760 150" width="100%" role="img" aria-label="稀疏图示意">
+        <text x="24" y="28" font-size="13" fill="#5A6B85">变量集合（基因 / 指标）</text>
+        <g font-size="12" text-anchor="middle">
+          <circle cx="80"  cy="100" r="14" fill="#EAF2FF" stroke="#3B82F6" stroke-width="2"/>
+          <circle cx="170" cy="52"  r="14" fill="#FFF6E5" stroke="#F5A623" stroke-width="2"/>
+          <circle cx="280" cy="100" r="14" fill="#EAF2FF" stroke="#3B82F6" stroke-width="2"/>
+          <circle cx="360" cy="50"  r="14" fill="#E8FBEF" stroke="#4ADE80" stroke-width="2"/>
+          <circle cx="470" cy="100" r="14" fill="#EAF2FF" stroke="#3B82F6" stroke-width="2"/>
+          <circle cx="560" cy="52"  r="14" fill="#E8FBEF" stroke="#4ADE80" stroke-width="2"/>
+          <circle cx="670" cy="100" r="14" fill="#FFF6E5" stroke="#F5A623" stroke-width="2"/>
+        </g>
+        <g stroke="#94A3B8" stroke-width="1.6" fill="none">
+          <path d="M92 92 Q130 66 158 60"/>
+          <path d="M292 96 Q330 62 348 58"/>
+          <path d="M482 92 Q520 66 548 60"/>
+          <path d="M92 108 Q180 128 268 108"/>
+          <path d="M480 108 Q575 130 658 108"/>
+        </g>
+        <g font-size="11" fill="#1B3A6B" font-family="Consolas,monospace">
+          <text x="318" y="18">稀疏精度矩阵 Ω（非零 = 边）</text>
+          <text x="700" y="128" text-anchor="end" fill="#5A6B85">虚线 = 条件独立（Ω<sub>ij</sub>=0）</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ===== Method ===== -->
+  <section class="sec" id="method">
+    <h2><span class="no">02</span>模型与算法</h2>
+    <div class="hint">求解带 l1 惩罚的 D-trace 损失，组合三种数值技术以应对 p ≫ n。</div>
+    <div class="card">
+      <div class="formula">min<sub>Ω∈Sᵖ</sub> &nbsp; ½ ‖Ω A‖<sub>F</sub>² − ⟨Ω, I⟩ + λ ‖Ω‖<sub>1,off</sub></div>
+      <p style="font-size:14px;color:var(--muted);">
+        A 由样本中心化 + thin SVD 得到（A = U diag(s)/√(n−1)）；
+        ‖Ω‖<sub>1,off</sub> = Σ<sub>i≠j</sub>|Ω<sub>ij</sub>| 惩罚非对角元，诱导稀疏图；
+        λ 控制稀疏度。算法全程不构造 p×p 的 Gram 矩阵。
+      </p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="tag">STEP 1</div>
+        <h3>自适应筛选 AS</h3>
+        <p>从残差中增量筛出潜在非零边，保持活跃集远小于 p²，显著降低每次子问题规模。</p>
+      </div>
+      <div class="step">
+        <div class="tag">STEP 2</div>
+        <h3>半光滑牛顿 SSNAL</h3>
+        <p>增广拉格朗日 + 半光滑牛顿求解活跃集上的子问题，二阶收敛速度。</p>
+      </div>
+      <div class="step">
+        <div class="tag">STEP 3</div>
+        <h3>内层 PCG</h3>
+        <p>牛顿方程的预条件共轭梯度求解；gap &lt; tol 停机判据保证解的最优性可验证。</p>
+      </div>
+    </div>
+  </section>
+
+<!-- ===== Usage ===== -->
+<section class="sec" id="usage">
+  <h2><span class="no">03</span>安装与快速上手</h2>
+  <div class="hint">R 与 Python 双实现，同一算法、同一解路径。完整参数说明见《MARS 使用说明》。</div>
+  <div class="tabs">
+    <button class="tabbtn active" onclick="switchTab('tabR', this)">R 包 MARS</button>
+    <button class="tabbtn" onclick="switchTab('tabPy', this)">Python 包 mars</button>
+  </div>
+  <div class="tabpanel show" id="tabR">
+<pre><code><span class="cm"># 安装（需 Rcpp / RcppArmadillo / Matrix + C++ 工具链）</span>
+install.packages(c("Rcpp", "RcppArmadillo", "Matrix"))
+install.packages(".", repos = NULL, type = "source")
+
+<span class="cm"># 求解一条 λ 路径：p = 3000, n = 50 的合成数据</span>
+library(MARS)
+set.seed(1)
+X &lt;- matrix(runif(3000 * 50), 3000, 50)
+sol &lt;- MARS(X, stopmethod = "bigs",
+            Lambdapath = seq(1, 0.5, -0.01), printmain = TRUE)
+str(sol)          <span class="cm"># Omegapath / Lambdapath / timepath</span>
+
+<span class="cm"># 返回的 Ω 稀疏非零模式即图：Ω[i,j] ≠ 0 ⟺ 变量 i、j 条件相关</span>
+Omega &lt;- as.matrix(sol$Omegapath[[1]])
+</code></pre>
+  </div>
+  <div class="tabpanel" id="tabPy">
+<pre><code><span class="cm"># 安装（Numba 可选，缺省自动回退纯 NumPy）</span>
+pip install -e "./MARS_python[jit]"
+
+<span class="cm"># 求解：p = 3000, n = 50</span>
+import numpy as np
+from mars import mars_path, maxLambda
+
+rng = np.random.default_rng(0)
+X = rng.standard_normal((3000, 50))
+lam = 0.95 * maxLambda(X)          <span class="cm"># 数据依赖 max-λ</span>
+Omegapath, Lambdapath, timepath = mars_path(
+    X, np.array([lam]), stoptol=1e-4, maxiter=10, stopmethod="fix")
+
+Omega = Omegapath[0]               <span class="cm"># 3000×3000 对称矩阵，非零模式即图</span>
+</code></pre>
+  </div>
+</section>
+
+<!-- ===== Demo ===== -->
+<section class="sec" id="demo">
+  <h2><span class="no">04</span>真实数据案例：前列腺基因网络</h2>
+  <div class="hint">prostmat.csv：p = 6033 个基因的表达活性，50 名对照 + 52 名前列腺癌患者；五折交叉验证选 λ，z-score 标准化。</div>
+  <div class="two-col">
+    <div class="figcard">
+      <h3>MARS 论文 Figure 4 复现</h3>
+      <img src="assets/ref_fig.png" alt="MARS 在前列腺数据上估计的基因网络（control 与 cancer 两组）">
+      <div class="cap" style="font-size:12px;color:var(--muted);margin-top:6px;">五折交叉验证选出的图：上 = control（n=50），下 = prostate cancer（n=52）</div>
+    </div>
+    <div class="figcard">
+      <h3>边 = 条件相关</h3>
+      <p style="font-size:13.5px;color:var(--muted);">两组中各画一条边的含义：两个基因的表达活性在给定其余全部基因后仍相关。红边表示对应的
+      <b style="color:var(--ink)">Ω<sub>ij</sub> ≠ 0</b>，即条件相关；无边的基因对条件独立。</p>
+      <table>
+        <tr><th>配置</th><th>control</th><th>cancer</th></tr>
+        <tr><td>样本量 n</td><td>50</td><td>52</td></tr>
+        <tr><td>变量数 p</td><td colspan="2">6033</td></tr>
+        <tr><td>λ / maxλ</td><td colspan="2">0.65（低 λ 稀疏解）</td></tr>
+        <tr><td>停机容差</td><td colspan="2">1e-4（gap &lt; tol）</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Performance ===== -->
+<section class="sec" id="perf">
+  <h2><span class="no">05</span>性能对比</h2>
+  <div class="hint">同一主机顺序运行，λ 路径取 maxλ 的 95% / 85% / 75% 三点（排除低 λ 病态区），stoptol=1e-4，maxiter=10。</div>
+  <div class="chartbox">
+    <div class="box" id="perfChart"><div class="nojs" style="color:var(--muted);font-size:12px;">图表组件加载失败时，以下方表格为准。</div></div>
+  </div>
+  <table>
+    <colgroup><col style="width:34%"><col style="width:22%"><col style="width:22%"><col style="width:22%"></colgroup>
+    <tr><th>实现</th><th>control (n=50)</th><th>cancer (n=52)</th><th>相对 R(MKL)</th></tr>
+    <tr><td>R 4.6.1 + Intel MKL</td><td>7.27 s</td><td>9.26 s</td><td>1.00×</td></tr>
+    <tr><td>Python + Numba（11 内核）</td><td>9.24 s</td><td>10.87 s</td><td>1.17–1.27×</td></tr>
+    <tr><td>Python 纯 NumPy</td><td>14.75 s</td><td>17.55 s</td><td>1.9–2.0×</td></tr>
+  </table>
+</section>
+
+<!-- ===== Citation ===== -->
+<section class="sec" id="cite">
+  <h2><span class="no">06</span>引用</h2>
+  <div class="cite">
+    <p>
+      Qian LI, Binyan Jiang, and Defeng Sun.
+      <b>"MARS: A second-order reduction algorithm for high-dimensional sparse
+      precision matrices estimation."</b>
+      <i>Journal of Machine Learning Research</i>, 24 (2023) 1-44.
+      <a href="https://jmlr.org/papers/v24/21-0699.html" target="_blank" rel="noopener">论文链接</a>
+    </p>
+    <p style="font-size:13px;color:var(--muted);margin-top:8px;">
+      代码：R 包 MARS 0.2.0（src/MARSc.cpp，RcppArmadillo）与 Python 包 mars
+      （mars/mars_py.py，NumPy + Numba JIT）；MATLAB/Octave 移植见 MARS_matlab/。
+    </p>
+  </div>
+</section>
+
+<div class="foot">MARS — 稀疏精度矩阵估计 · 高维图模型 · 条件相关 · AS–SSNAL–PCG · R / Python / MATLAB 三实现</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  function switchTab(id, btn){
+    document.querySelectorAll(".tabbtn").forEach(function(b){ b.classList.remove("active"); });
+    document.querySelectorAll(".tabpanel").forEach(function(p){ p.classList.remove("show"); });
+    btn.classList.add("active");
+    document.getElementById(id).classList.add("show");
+  }
+  window.switchTab = switchTab;
+
+  var el = document.getElementById("perfChart");
+  if (typeof echarts !== "undefined" && el){
+    var ch = echarts.init(el);
+    ch.setOption({
+      title: { text: "真实数据全路径耗时（3 λ）", left: 8, top: 6, textStyle: { fontSize: 14, fontWeight: 700 } },
+      tooltip: { trigger: "axis", triggerOn: "click", confine: true, renderMode: "richText",
+                 formatter: function(ps){ var s=""; ps.forEach(function(p){ s += p.marker + p.seriesName + "：" + p.value + " s" + String.fromCharCode(10); }); return s; } },
+      legend: { top: 32 },
+      grid: { left: 64, right: 20, top: 70, bottom: 28, containLabel: true },
+      xAxis: { type: "category", data: ["R + MKL", "Python + Numba", "Python 纯 NumPy"],
+               axisLabel: { fontSize: 11, fontFamily: "Consolas,monospace" } },
+      yAxis: { type: "value", name: "秒", axisLabel: { fontSize: 11, fontFamily: "Consolas,monospace" } },
+      series: [
+        { name: "control", type: "bar", data: [7.27, 9.24, 14.75], itemStyle: { color: "#3B82F6" },
+          label: { show: true, position: "top", fontSize: 11 } },
+        { name: "cancer", type: "bar", data: [9.26, 10.87, 17.55], itemStyle: { color: "#F5A623", opacity: .9 },
+          label: { show: true, position: "top", fontSize: 11 } }
+      ]
+    });
+  }
+})();
+</script>
+</body>
+</html>
