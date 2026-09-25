@@ -96,6 +96,9 @@
   .tabpanel h3{color:#F3C7BD; font-size:17px; margin:22px 0 6px;}
   .tabpanel a{color:#FDBA74; text-decoration:none;}
   .tabpanel a:hover{color:#FDE68A; text-decoration:underline;}
+  .hero-cite{margin-top:30px; font-size:15px; color:#C9A29A; line-height:1.75; max-width:900px;}
+  .hero-cite a{color:#FDBA74; text-decoration:none;}
+  .hero-cite a:hover{color:#FDE68A; text-decoration:underline;}
   .cite a{color:#FDBA74; text-decoration:none;}
   .cite a:hover{color:#FDE68A; text-decoration:underline;}
   /* demo */
@@ -158,7 +161,15 @@
         </a>
         <a class="btn ghost" href="https://jmlr.org/papers/v24/21-0699.html" target="_blank" rel="noopener">JMLR Paper</a>
       </div>
-
+      <div class="hero-cite">
+        <a href="https://qianli-ql-xa.github.io/" target="_blank" rel="noopener">Qian LI</a>,
+        <a href="https://sites.google.com/site/binyanj" target="_blank" rel="noopener">Binyan Jiang</a>, and
+        <a href="https://www.polyu.edu.hk/ama/profile/dfsun/" target="_blank" rel="noopener">Defeng Sun</a>.
+        &ldquo;MARS: A second-order reduction algorithm for high-dimensional sparse
+        precision matrices estimation.&rdquo;
+        <i>Journal of Machine Learning Research</i>, 24 (2023) 1-44.
+        <a href="https://jmlr.org/papers/v24/21-0699.html" target="_blank" rel="noopener">Paper link</a>
+      </div>
     </div>
   </div>
 </section>
@@ -388,35 +399,7 @@ is <code>mars_path(X, Lambdapath, stoptol, maxiter, stopmethod, ...)</code>;
     </p>
   </div>
 
-  <div class="wrap" style="margin-top:46px;">
-    <h2><span class="no">04</span>Citation</h2>
-    <div class="cite">
-      <p>
-        <a href="https://qianli-ql-xa.github.io/" target="_blank" rel="noopener">Qian LI</a>,
-        <a href="https://sites.google.com/site/binyanj" target="_blank" rel="noopener">Binyan Jiang</a>, and
-        <a href="https://www.polyu.edu.hk/ama/profile/dfsun/" target="_blank" rel="noopener">Defeng Sun</a>.
-        <b>"MARS: A second-order reduction algorithm for high-dimensional sparse
-        precision matrices estimation."</b>
-        <i>Journal of Machine Learning Research</i>, 24 (2023) 1-44.
-        <a href="https://jmlr.org/papers/v24/21-0699.html" target="_blank" rel="noopener">Paper link</a>
-      </p>
-      <p style="font-size:15px;color:var(--muted);margin-top:10px;">
-        Code: R package MARS 0.2.0 (src/MARSc.cpp, RcppArmadillo) and Python
-        package mars (mars/mars_py.py, NumPy + Numba JIT).
-      </p>
-      <div class="bibbox"><code id="bibtext">@article{li2023mars,
-  author  = {Qian Li and Binyan Jiang and Defeng Sun},
-  title   = {MARS: A second-order reduction algorithm for high-dimensional sparse precision matrices estimation},
-  journal = {Journal of Machine Learning Research},
-  volume  = {24},
-  number  = {110},
-  pages   = {1--44},
-  year    = {2023},
-  url     = {https://jmlr.org/papers/v24/21-0699.html}
-}</code></div>
-    </div>
-    <div class="foot">MARS &mdash; sparse precision matrix estimation &middot; high-dimensional graphical models &middot; conditional dependence &middot; AS&ndash;SSNAL&ndash;PCG &middot; R / Python</div>
-  </div>
+  <div class="foot" style="margin-top:56px;">MARS &mdash; sparse precision matrix estimation &middot; high-dimensional graphical models &middot; conditional dependence &middot; AS&ndash;SSNAL&ndash;PCG &middot; R / Python</div>
 
 </section>
 
