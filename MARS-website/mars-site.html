@@ -319,20 +319,9 @@ used) and <code>timepath</code> (wall-clock seconds per lambda).
      maxiter = 100L, maxlambdacheck = TRUE, printmain = FALSE,
      printsub = FALSE, stoptol = 1e-4, sigma = 1.0)
 </code></pre>
-<table>
-  <colgroup><col style="width:22%"><col style="width:78%"></colgroup>
-  <tr><th>Argument</th><th>Description</th></tr>
-  <tr><td><code>X</code></td><td><code>p x n</code> sample matrix (rows = variables, columns = samples).</td></tr>
-  <tr><td><code>Lambdapath</code></td><td>Numeric vector of candidate tuning parameters (decreasing). Values above the data-dependent max-lambda are discarded when <code>maxlambdacheck = TRUE</code>.</td></tr>
-  <tr><td><code>stopmethod</code></td><td><code>"bigs"</code>: early stop when the active set saturates (<code>nnz &gt; length(Lambdapath)*n</code> or <code>numAS &gt; 4</code>); <code>"fix"</code>: solve every lambda in the path.</td></tr>
-  <tr><td><code>fixnumber</code></td><td>With <code>stopmethod = "fix"</code>, number of leading lambdas to solve.</td></tr>
-  <tr><td><code>maxiter</code></td><td>Maximum outer (ALM) iterations.</td></tr>
-  <tr><td><code>maxlambdacheck</code></td><td>Drop lambdas exceeding the data-dependent max-lambda.</td></tr>
-  <tr><td><code>printmain</code></td><td>Print per-lambda progress.</td></tr>
-  <tr><td><code>printsub</code></td><td>Print subproblem (SSNAL) progress.</td></tr>
-  <tr><td><code>stoptol</code></td><td>Stopping tolerance; the solver stops once <code>max(primfeas, dualfeas) &lt; 500*max(1e-6, stoptol)</code> and <code>eta &lt; stoptol</code> (includes the <code>gap &lt; tol</code> criterion).</td></tr>
-  <tr><td><code>sigma</code></td><td>Initial ALM penalty parameter.</td></tr>
-</table>
+<p style="font-size:15px;color:var(--muted);margin-top:10px;">
+Full parameter reference: <a href="https://github.com/QianLI-QL-XA/MARS#readme" target="_blank" rel="noopener">MARS README on GitHub</a>.
+</p>
 <h3 style="font-size:17px;margin:22px 0 6px;">Real-data example (prostate gene expression)</h3>
 <pre><code>library(MARS)
 prost &lt;- read.csv("prostmat.csv", header = FALSE)   <span class="cm"># 6033 x 102</span>
