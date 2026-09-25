@@ -34,7 +34,8 @@ preconditioned conjugate gradient inner solver.
 
 ## References
 
-Qian LI, Binyan Jiang, and Defeng Sun.
+[Qian LI](https://qianli-ql-xa.github.io/), [Binyan Jiang](https://sites.google.com/site/binyanj), and
+[Defeng Sun](https://www.polyu.edu.hk/ama/profile/dfsun/).
 ["MARS: A second-order reduction algorithm for high-dimensional sparse precision matrices estimation"](https://jmlr.org/papers/v24/21-0699.html).
 *Journal of Machine Learning Research*, 24 (2023) 1-44.
 
