@@ -5,7 +5,3 @@ MARSc <- function(X, stoptol, Lambdapath, stopmethod, maxiter, printyes, printye
     .Call(`_MARS_MARSc`, X, stoptol, Lambdapath, stopmethod, maxiter, printyes, printyessub, sigma, numlam, maxlambdacheck)
 }
 
-PMEASc <- function(X, stoptol, Lambdapath, calmethod, stopmethod, maxiter, printyes, printyessub, sigma, numlam, maxlambdacheck) {
-    .Call(`_MARS_PMEASc`, X, stoptol, Lambdapath, calmethod, stopmethod, maxiter, printyes, printyessub, sigma, numlam, maxlambdacheck)
-}
-

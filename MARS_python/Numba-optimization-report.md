@@ -4,8 +4,8 @@
 
 对 `MARS_python/mars_py.py`（纯 numpy 移植版，SSNAL + adaptive sieving + PCG）实施 Numba JIT 优化：
 
-- **新增 7 个 `@njit(cache=True)` 内核**：`_opSY_jit`、`_opInvLA_jit`、`_prox_b_jit`、`_partgradient_jit`、`_PMEASCG_jit`（整函数 CG，含停滞检查）、`_findstep_jit`（整函数线搜索）、`_sumsq`/`_sumsq_xy`/`_normF` 辅助。
-- **改造 6 个调用入口**：`operatorSY`、`operatorInvLA`、`prox_b`、`partgradient`、`PMEASCG`、`findstep` 均加 `USE_NUMBA` 分支；外层 `PMEASSSNCGc`/`PMEASmainc`/`mars_path` 结构不变（SN 迭代层 Python 调度开销占比小）。
+- **新增 7 个 `@njit(cache=True)` 内核**：`_opSY_jit`、`_opInvLA_jit`、`_prox_b_jit`、`_partgradient_jit`、`_MARSCG_jit`（整函数 CG，含停滞检查）、`_findstep_jit`（整函数线搜索）、`_sumsq`/`_sumsq_xy`/`_normF` 辅助。
+- **改造 6 个调用入口**：`operatorSY`、`operatorInvLA`、`prox_b`、`partgradient`、`MARSCG`、`findstep` 均加 `USE_NUMBA` 分支；外层 `MARSSSNCGc`/`MARSmainc`/`mars_path` 结构不变（SN 迭代层 Python 调度开销占比小）。
 - **保留 numpy 回退开关**：`mars_py.USE_NUMBA = False` 即回到原始 numpy 实现（numba 未安装时自动回退）。
 
 ## 2. 修复的 JIT bug
@@ -49,5 +49,5 @@ numpy 20.5 s → numba 1.43 s（**14.3×**；λ=0.4 单点 40×）。
 ## 5. 结论与后续
 
 - **Numba JIT 版数学等价（高/中 λ 位级一致）、性能提升 2.3–3.9×（真实数据全路径）**；算子级 9–21×，外层 Python 调度与 findA/findmaxlambda/gradP 等 numpy 大矩阵运算（BLAS 已快）为剩余瓶颈。
-- 若需进一步提速：① 将 `PMEASSSNCGc`/`PMEASmainc` 整函数 JIT（消除 SN 层调度）；② findmaxlambda 块循环 JIT；③ 低 λ 大活性集场景可考虑 24 核并行（多 λ 批处理）。
+- 若需进一步提速：① 将 `MARSSSNCGc`/`MARSmainc` 整函数 JIT（消除 SN 层调度）；② findmaxlambda 块循环 JIT；③ 低 λ 大活性集场景可考虑 24 核并行（多 λ 批处理）。
 - GPU（RTX 5060 4GB）在当前规模为负收益（数据传输 > 计算），留给 p≥1e5 场景。

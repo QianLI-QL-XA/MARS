@@ -69,7 +69,7 @@ Gram matrix).
 
 ### Low-level solvers
 
-`PMEASmainc`, `PMEASSSNCGc`, `PMEASCG`, `operatorSY`, `operatorInvLA`,
+`MARSmainc`, `MARSSSNCGc`, `MARSCG`, `operatorSY`, `operatorInvLA`,
 `proxBmain`, `prox_b`, `partgradient`, `findstep`, `ind2sub`, `findcd`,
 `vecOmega`, `updatesigma` — direct ports of the C++ internals, exposed for
 experimentation and debugging.

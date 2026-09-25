@@ -10,16 +10,16 @@ Public API
 - :func:`mars_path`  : solve the whole lambda path (main entry).
 - :func:`findA`      : build the transformed sample matrix A.
 - :func:`findmaxlambda` / :func:`maxLambda` : data-dependent max lambda.
-- :func:`PMEASmainc` : solve a single lambda on a given active set.
+- :func:`MARSmainc` : solve a single lambda on a given active set.
 """
 from .mars_py import (
     mars_path,
     findA,
     findmaxlambda,
     maxLambda,
-    PMEASmainc,
-    PMEASSSNCGc,
-    PMEASCG,
+    MARSmainc,
+    MARSSSNCGc,
+    MARSCG,
     operatorSY,
     operatorInvLA,
     proxBmain,
@@ -40,9 +40,9 @@ __all__ = [
     "findA",
     "findmaxlambda",
     "maxLambda",
-    "PMEASmainc",
-    "PMEASSSNCGc",
-    "PMEASCG",
+    "MARSmainc",
+    "MARSSSNCGc",
+    "MARSCG",
     "operatorSY",
     "operatorInvLA",
     "proxBmain",

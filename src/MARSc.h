@@ -16,13 +16,13 @@ using namespace std;
 Rcpp::List MARSc(arma::mat X, double stoptol, arma::vec Lambdapath, std::string stopmethod,  unsigned int maxiter, bool printyes,\
                   bool printyessub, double sigma, int numlam, bool maxlambdacheck);
 
-void PMEASmainc(arma::mat A, double lambda, double stoptol, int maxiter, arma::uvec Index, arma::umat subindex, arma::mat& Omega, arma::mat& Y, int p, int n, double sigma, bool printyessub, double& primobj,\
+void MARSmainc(arma::mat A, double lambda, double stoptol, int maxiter, arma::uvec Index, arma::umat subindex, arma::mat& Omega, arma::mat& Y, int p, int n, double sigma, bool printyessub, double& primobj,\
            double& dualobj, double& gap, double& primfeas, double& dualfeas, double& eta, int& nnzOmega);
 
-void PMEASSSNCGc(arma::mat &Y, arma::vec &z, arma::vec &ztmp, arma::vec &SY, int &subbreakyes, arma::mat A, arma::vec x, double lambda, double sigma, int maxitersub, double Stolconst, double stoptol, \
+void MARSSSNCGc(arma::mat &Y, arma::vec &z, arma::vec &ztmp, arma::vec &SY, int &subbreakyes, arma::mat A, arma::vec x, double lambda, double sigma, int maxitersub, double Stolconst, double stoptol, \
     int p, int n, arma::uvec Index, arma::umat subindex, arma::vec a, arma::vec b, arma::vec c, arma::vec d);
 
-void PMEASCG(arma::mat res, double tolCG, int maxiterCG, arma::mat A, arma::umat subindex, arma::vec u, int p, int n, arma::vec a, double sigma, arma::mat &direction, int &solveok, std::vector<double> &err);
+void MARSCG(arma::mat res, double tolCG, int maxiterCG, arma::mat A, arma::umat subindex, arma::vec u, int p, int n, arma::vec a, double sigma, arma::mat &direction, int &solveok, std::vector<double> &err);
 
 
 void findstep(arma::mat GradPsiY, double steptol, double stepop, double sigma, arma::mat direction, arma::mat A, arma::mat &Y, arma::vec &ztmp, arma::vec &z, double &PsiY, arma::uvec Index, arma::vec a, arma::vec d, int p, arma::umat subindex, double lambda, double &alp);

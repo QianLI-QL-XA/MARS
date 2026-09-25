@@ -1,6 +1,17 @@
 ^MARS\.Rproj$
 ^MARS\.pdf$
+^SunSunQi2004\.pdf$
 ^.*\.Rhistory$
 ^.*\.Rproj\.user$
 ^src/.*\.(o|dll|so|dylib)$
 ^MARS-review-report\.md$
+^MARSexp$
+^MARS_python$
+^MARS-website$
+^MARS-perf-dashboard$
+^MARS使用说明\.md$
+^MARS\.Rcheck$
+^MARS_0\.2\.0\.tar\.gz$
+^_check\.log$
+^_rlib$
+^data/prostmat\.csv$

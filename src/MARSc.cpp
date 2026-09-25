@@ -83,7 +83,7 @@ Rcpp::List MARSc(arma::mat X, double stoptol, arma::vec Lambdapath, std::string 
       Rcout << "lambda = " << fixed << lambda << endl;
     }
     if (iterpath == 0){
-      PMEASmainc(A, lambda, stoptol, maxiter, Index, subindex, Omega, Y, p, n, sigma, printyessub, primobj,\
+      MARSmainc(A, lambda, stoptol, maxiter, Index, subindex, Omega, Y, p, n, sigma, printyessub, primobj,\
                  dualobj, gap, primfeas, dualfeas, eta, nnzOmega);
       if (printyessub){
         Rcout << "subproblem results printing end." << endl;
@@ -134,7 +134,7 @@ Rcpp::List MARSc(arma::mat X, double stoptol, arma::vec Lambdapath, std::string 
         Index = newIndex;
       }
       subindex = arma::ind2sub(size(Omega), Index);
-      PMEASmainc(A, lambda, stoptol, maxiter, Index, subindex, Omega, Y, p, n, sigma, printyessub, primobj,\
+      MARSmainc(A, lambda, stoptol, maxiter, Index, subindex, Omega, Y, p, n, sigma, printyessub, primobj,\
                  dualobj, gap, primfeas, dualfeas, eta, nnzOmega);
       if (printyessub){
       Rcout << " subproblem results printing end." << endl;
@@ -221,7 +221,7 @@ Rcpp::List MARSc(arma::mat X, double stoptol, arma::vec Lambdapath, std::string 
 /* ***********************************
 * main function
 */
-void PMEASmainc(arma::mat A, double lambda, double stoptol, int maxiter, arma::uvec Index, arma::umat subindex, arma::mat &Omega, arma::mat &Y, int p, int n, double sigma, bool printyessub, double &primobj,\
+void MARSmainc(arma::mat A, double lambda, double stoptol, int maxiter, arma::uvec Index, arma::umat subindex, arma::mat &Omega, arma::mat &Y, int p, int n, double sigma, bool printyessub, double &primobj,\
                 double  &dualobj, double &gap, double &primfeas, double &dualfeas, double &eta, int &nnzOmega){
   // preparation
 
@@ -272,7 +272,7 @@ void PMEASmainc(arma::mat A, double lambda, double stoptol, int maxiter, arma::u
 
     int subbreakyes = 0;
     arma::vec z(lengthIndex), ztmp(lengthIndex);
-    PMEASSSNCGc(Y, z, ztmp, SY, subbreakyes, A, x, lambda, sigma, maxitersub, Stolconst, stoptol, \
+    MARSSSNCGc(Y, z, ztmp, SY, subbreakyes, A, x, lambda, sigma, maxitersub, Stolconst, stoptol, \
     p, n, Index, subindex, a, b, c, d);
     SYc = SY - c;
     x = sigma * ztmp;
@@ -327,7 +327,7 @@ void PMEASmainc(arma::mat A, double lambda, double stoptol, int maxiter, arma::u
 /*
 * main part of using semismooth Newton
 */
-void PMEASSSNCGc(arma::mat &Y, arma::vec &z, arma::vec &ztmp, arma::vec &SY, int &subbreakyes, arma::mat A, arma::vec x, double lambda, double sigma, int maxitersub, double Stolconst, double stoptol, \
+void MARSSSNCGc(arma::mat &Y, arma::vec &z, arma::vec &ztmp, arma::vec &SY, int &subbreakyes, arma::mat A, arma::vec x, double lambda, double sigma, int maxitersub, double Stolconst, double stoptol, \
     int p, int n, arma::uvec Index, arma::umat subindex, arma::vec a, arma::vec b, arma::vec c, arma::vec d){
   int maxiterCG = 500;
   arma::vec zin = x / sigma - SY + c;
@@ -396,7 +396,7 @@ void PMEASSSNCGc(arma::mat &Y, arma::vec &z, arma::vec &ztmp, arma::vec &SY, int
     int solveok = 1;
     vector<double> err;
     arma::vec u = partgradient(ztmp + z, c, lambda); // this may put into CG function
-    PMEASCG(res, tolCG, maxiterCG, A, subindex, u, p, n, a, sigma, direction, solveok, err);
+    MARSCG(res, tolCG, maxiterCG, A, subindex, u, p, n, a, sigma, direction, solveok, err);
     //SSNCGsolveok.push_back(solveok);
     //SSNCGCGiter.push_back(err.size() - 1);
     double steptol = 1e-5;
@@ -424,7 +424,7 @@ void PMEASSSNCGc(arma::mat &Y, arma::vec &z, arma::vec &ztmp, arma::vec &SY, int
 
 
 /* CG */
-void PMEASCG(arma::mat res, double tolCG, int maxiterCG, arma::mat A, arma::umat subindex, arma::vec u, int p, int n, arma::vec a, double sigma, arma::mat &direction, int &solveok, vector<double> &err){
+void MARSCG(arma::mat res, double tolCG, int maxiterCG, arma::mat A, arma::umat subindex, arma::vec u, int p, int n, arma::vec a, double sigma, arma::mat &direction, int &solveok, vector<double> &err){
   int stagnatecheck = 20;
   err.push_back(norm(res, "fro"));
   arma::mat g = res, Vg;

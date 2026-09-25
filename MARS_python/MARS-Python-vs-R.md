@@ -11,12 +11,12 @@
 
 ## 2. 移植要点与两处关键修复
 
-移植函数（与 C++ 同名同逻辑）：`findA`（行减均值→薄 SVD→`A=U·diag(s)/√(n-1)`）、`findmaxlambda`、`proxBmain`（非对角夹取）、`findcd/vecOmega/operatorSY/operatorInvLA`（L_A 逆算子，`np.add.at` 累加）、`prox_b/partgradient`、`updatesigma`、`PMEASCG`（CG，停滞检测与 C++ 相同）、`findstep`（Wolfe 型线搜索）、`PMEASSSNCGc`（半光滑牛顿子问题）、`PMEASmainc`（ALM 主循环）、`mars_path`（筛减解路径）。
+移植函数（与 C++ 同名同逻辑）：`findA`（行减均值→薄 SVD→`A=U·diag(s)/√(n-1)`）、`findmaxlambda`、`proxBmain`（非对角夹取）、`findcd/vecOmega/operatorSY/operatorInvLA`（L_A 逆算子，`np.add.at` 累加）、`prox_b/partgradient`、`updatesigma`、`MARSCG`（CG，停滞检测与 C++ 相同）、`findstep`（Wolfe 型线搜索）、`MARSSSNCGc`（半光滑牛顿子问题）、`MARSmainc`（ALM 主循环）、`mars_path`（筛减解路径）。
 
 修复过程中定位到两处**移植陷阱**：
 
 1. **筛减线性索引语义**：Armadillo `find()` 返回**列主序**索引（`idx = i + j·p`），numpy `flatnonzero` 是**行主序**（`idx = i·p + j`）。两者在活动集上解释错位会导致筛减加入错误的（转置）位置。已转换：`newJ = (idx//p) + (idx%p)·p`。
-2. **引用传递语义**：C++ 中 `Y` 以引用进出 `PMEASSSNCGc`（子问题内线搜索更新 `Y`，调用方可见）；Python 函数参数赋值 `Y = Yold + alp·direction` 只重绑定局部变量，**调用方的 `Y` 不更新**，导致子问题后主循环仍用旧 `Y`（解分歧 30 倍）。修复：`PMEASSSNCGc` 显式返回 `Y` 并传回 `PMEASmainc`。
+2. **引用传递语义**：C++ 中 `Y` 以引用进出 `MARSSSNCGc`（子问题内线搜索更新 `Y`，调用方可见）；Python 函数参数赋值 `Y = Yold + alp·direction` 只重绑定局部变量，**调用方的 `Y` 不更新**，导致子问题后主循环仍用旧 `Y`（解分歧 30 倍）。修复：`MARSSSNCGc` 显式返回 `Y` 并传回 `MARSmainc`。
 
 修复后解一致性从 `rel≈1e-1~1e-0`（小数据）提升到**机器精度级 `rel≈1e-10~1e-11`**。
 

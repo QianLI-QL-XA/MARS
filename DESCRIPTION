@@ -12,8 +12,8 @@ Description: Generates a solution path of sparse precision matrices under the
     the high-dimensional setting where the sample dimension p is much greater
     than the sample size n.
 License: GPL-2
-URL: https://github.com/QianLI-QL/MARS
-BugReports: https://github.com/QianLI-QL/MARS/issues
+URL: https://github.com/QianLI-QL-XA/MARS
+BugReports: https://github.com/QianLI-QL-XA/MARS/issues
 Depends: Matrix
 Imports: Rcpp (>= 1.0.0)
 LinkingTo: Rcpp, RcppArmadillo

@@ -72,8 +72,8 @@ try:
         return u
 
     @njit(cache=True)
-    def _PMEASCG_jit(res, tolCG, maxiterCG, A, i, j, u, a, sigma):
-        """plain CG on (I + sigma L_A^{-1} diag(u) L_A), as in C++ PMEASCG"""
+    def _MARSCG_jit(res, tolCG, maxiterCG, A, i, j, u, a, sigma):
+        """plain CG on (I + sigma L_A^{-1} diag(u) L_A), as in C++ MARSCG"""
         g = res.copy()
         err0 = _normF(res)
         rz1 = err0 * err0
@@ -400,10 +400,10 @@ def updatesigma(primwin, dualwin, sigma, itersub, subbreakyes):
     return primwin, dualwin, sigma
 
 
-def PMEASCG(res, tolCG, maxiterCG, A, sub, u, a, sigma):
+def MARSCG(res, tolCG, maxiterCG, A, sub, u, a, sigma):
     """preconditioned? plain CG on (I + sigma L_A^{-1} diag(u) L_A) system (as in C++)"""
     if USE_NUMBA:
-        direction, solveok = _PMEASCG_jit(res, tolCG, maxiterCG, A, sub[0], sub[1], u, a, sigma)
+        direction, solveok = _MARSCG_jit(res, tolCG, maxiterCG, A, sub[0], sub[1], u, a, sigma)
         return direction, solveok, []
     err = [float(np.linalg.norm(res))]
     g = res.copy()
@@ -471,8 +471,8 @@ def findstep(GradPsiY, steptol, stepop, sigma, direction, A, Y, ztmp, z, PsiY, a
     return Y, ztmp, z, PsiY, alp
 
 
-def PMEASSSNCGc(Y, A, x, lam, sigma, maxitersub, Stolconst, stoptol, p, n, Index, sub, a, b, c, d):
-    """semismooth Newton subproblem (C++ PMEASSSNCGc); returns z, ztmp, SY, subbreakyes"""
+def MARSSSNCGc(Y, A, x, lam, sigma, maxitersub, Stolconst, stoptol, p, n, Index, sub, a, b, c, d):
+    """semismooth Newton subproblem (C++ MARSSSNCGc); returns z, ztmp, SY, subbreakyes"""
     maxiterCG = 500
     SY = 0.5 * operatorSY(Y, A, sub)
     zin = x / sigma - SY + c
@@ -514,7 +514,7 @@ def PMEASSSNCGc(Y, A, x, lam, sigma, maxitersub, Stolconst, stoptol, p, n, Index
         tolCG = tolCGconst * tolCG
         direction = np.zeros((p, n))
         u = partgradient(ztmp + z, c, lam)
-        direction, solveok, _ = PMEASCG(res, tolCG, maxiterCG, A, sub, u, a, sigma)
+        direction, solveok, _ = MARSCG(res, tolCG, maxiterCG, A, sub, u, a, sigma)
         steptol = 1e-5
         stepop = 1 if (itersub < 2 or (itersub <= 2 and subdualfeas > 1e-4)) else 2
         alp = 1.0
@@ -526,8 +526,8 @@ def PMEASSSNCGc(Y, A, x, lam, sigma, maxitersub, Stolconst, stoptol, p, n, Index
     return Y, z, ztmp, SY, subbreakyes
 
 
-def PMEASmainc(A, lam, stoptol, maxiter, Index, sub, Omega, Y, p, n, sigma, printyessub=False):
-    """ALM + semismooth Newton on active set (C++ PMEASmainc)"""
+def MARSmainc(A, lam, stoptol, maxiter, Index, sub, Omega, Y, p, n, sigma, printyessub=False):
+    """ALM + semismooth Newton on active set (C++ MARSmainc)"""
     lengthIndex = len(Index)
     maxitersub = 10
     Stolconst = 0.5
@@ -556,7 +556,7 @@ def PMEASmainc(A, lam, stoptol, maxiter, Index, sub, Omega, Y, p, n, sigma, prin
             maxitersub = max(maxitersub, 30)
         elif dualfeas < 1e-1:
             maxitersub = max(maxitersub, 20)
-        Y, z, ztmp, SY, subbreakyes = PMEASSSNCGc(Y, A, x, lam, sigma, maxitersub, Stolconst,
+        Y, z, ztmp, SY, subbreakyes = MARSSSNCGc(Y, A, x, lam, sigma, maxitersub, Stolconst,
                                                   stoptol, p, n, Index, sub, a, b, c, d)
         SYc = SY - c
         x = sigma * ztmp
@@ -625,7 +625,7 @@ def mars_path(X, Lambdapath, stoptol=1e-4, maxiter=10, stopmethod="fix",
         t0 = _time.perf_counter()
         if iterpath == 0:
             Omega, Y, primobj, dualobj, gap, primfeas, dualfeas, eta, nnzOmega, sigma = \
-                PMEASmainc(A, lam, stoptol, maxiter, Index, sub, Omega, Y, p, n, sigma, printyessub)
+                MARSmainc(A, lam, stoptol, maxiter, Index, sub, Omega, Y, p, n, sigma, printyessub)
         if USE_NUMBA:
             nz_i, nz_j, nz_v = _nonzero_upper_jit(Omega, 0.0)
             gradP = _gradP_jit(Omega, G, nz_i, nz_j, nz_v) - np.eye(p)
@@ -663,7 +663,7 @@ def mars_path(X, Lambdapath, stoptol=1e-4, maxiter=10, stopmethod="fix",
             rows = Index % p; cols = Index // p
             sub = np.vstack([rows, cols])
             Omega, Y, primobj, dualobj, gap, primfeas, dualfeas, eta, nnzOmega, sigma = \
-                PMEASmainc(A, lam, stoptol, maxiter, Index, sub, Omega, Y, p, n, sigma, printyessub)
+                MARSmainc(A, lam, stoptol, maxiter, Index, sub, Omega, Y, p, n, sigma, printyessub)
             if USE_NUMBA:
                 nz_i, nz_j, nz_v = _nonzero_upper_jit(Omega, 0.0)
                 gradP = _gradP_jit(Omega, G, nz_i, nz_j, nz_v) - np.eye(p)

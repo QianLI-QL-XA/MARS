@@ -2,7 +2,7 @@
 
 **MARS** — A second-order reduction algorithm for high-dimensional **sparse
 precision matrix** estimation. The package provides both an R implementation
-(`MARS`, `PMEAS`) and a Python implementation (see [Python version](#python-version)).
+(`MARS`) and a Python implementation (see [Python version](#python-version)).
 
 ## What does MARS estimate?
 
@@ -121,16 +121,6 @@ The sparsity pattern (`Omega != 0`) gives the estimated gene network; entries
 `Omega_ij != 0` indicate conditional dependence between gene `i` and gene `j`
 given all other genes. `maxLambda(X)` returns the data-dependent max-lambda
 (the largest value for which a non-diagonal edge can enter the solution).
-
-### The `PMEAS()` comparison interface
-
-```r
-PMEAS(X, Lambdapath, calmethod = c("SSNAL", "iADMM", "eADMM"), ...)
-```
-
-`PMEAS()` exposes the same solution path with three solvers for comparison:
-the default SSNAL (`"SSNAL"`), an inexact ADMM (`"iADMM"`), and an exact
-ADMM (`"eADMM"`). Use it to cross-check solutions or benchmark solvers.
 
 ## Python version
 
