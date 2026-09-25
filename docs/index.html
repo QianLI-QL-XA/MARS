@@ -280,18 +280,23 @@
 <!-- ===== View: Usage ===== -->
 <section class="view" id="view-usage">
   <div class="wrap">
-    <h2><span class="no">03</span>Install &amp; Quick Start</h2>
-    <div class="hint">R and Python, same algorithm, same solution path. Full parameter reference in the package README / user guide.</div>
+    <h2><span class="no">03</span>Usage</h2>
+    <div class="hint">R and Python, same algorithm, same solution path. Full installation, parameter reference and examples below (mirrors the package README).</div>
     <div class="tabs">
       <button class="tabbtn active" onclick="switchTab('tabR', this)">R package MARS</button>
       <button class="tabbtn" onclick="switchTab('tabPy', this)">Python package mars</button>
     </div>
     <div class="tabpanel show" id="tabR">
-<pre><code><span class="cm"># install (needs Intel MKL build of R, e.g. Microsoft R Open 4.x, + Rcpp / RcppArmadillo / Matrix + a C++ toolchain)</span>
+<pre><code><span class="cm"># 1) installation: needs a C++ toolchain (Rtools on Windows, Xcode CLT on</span>
+<span class="cm">#    macOS, g++ on Linux) plus Rcpp / RcppArmadillo / Matrix:</span>
 install.packages(c("Rcpp", "RcppArmadillo", "Matrix"))
+
+<span class="cm">#    from GitHub:</span>
+# library(devtools); devtools::install_github("QianLI-QL-XA/MARS")
+<span class="cm">#    or locally, from the package source (where DESCRIPTION lives):</span>
 install.packages(".", repos = NULL, type = "source")
 
-<span class="cm"># solve a lambda path: p = 3000, n = 50 synthetic data</span>
+<span class="cm"># 2) minimal example: p = 3000, n = 50 synthetic data</span>
 library(MARS)
 set.seed(1)
 X &lt;- matrix(runif(3000 * 50), 3000, 50)
@@ -299,15 +304,57 @@ sol &lt;- MARS(X, stopmethod = "bigs",
             Lambdapath = seq(1, 0.5, -0.01), printmain = TRUE)
 str(sol)          <span class="cm"># Omegapath / Lambdapath / timepath</span>
 
-<span class="cm"># nonzero pattern of Omega is the graph: Omega[i,j] != 0 &lt;=&gt; i, j conditionally dependent</span>
+<span class="cm"># 3) the nonzero pattern of Omega is the graph:</span>
+<span class="cm">#    Omega[i,j] != 0 &lt;=&gt; i, j conditionally dependent</span>
 Omega &lt;- as.matrix(sol$Omegapath[[1]])
+</code></pre>
+<p style="font-size:15px;color:var(--muted);margin-top:14px;">
+<code>MARS()</code> returns a list with <code>Omegapath</code> (estimated sparse
+precision matrices, one per lambda, each a <code>dsCMatrix</code> from package
+<code>Matrix</code>), <code>Lambdapath</code> (the tuning parameters actually
+used) and <code>timepath</code> (wall-clock seconds per lambda).
+</p>
+<h3 style="font-size:17px;margin:22px 0 6px;">The <code>MARS()</code> function</h3>
+<pre><code>MARS(X, Lambdapath, stopmethod = c("bigs", "fix"), fixnumber = 1L,
+     maxiter = 100L, maxlambdacheck = TRUE, printmain = FALSE,
+     printsub = FALSE, stoptol = 1e-4, sigma = 1.0)
+</code></pre>
+<table>
+  <colgroup><col style="width:22%"><col style="width:78%"></colgroup>
+  <tr><th>Argument</th><th>Description</th></tr>
+  <tr><td><code>X</code></td><td><code>p x n</code> sample matrix (rows = variables, columns = samples).</td></tr>
+  <tr><td><code>Lambdapath</code></td><td>Numeric vector of candidate tuning parameters (decreasing). Values above the data-dependent max-lambda are discarded when <code>maxlambdacheck = TRUE</code>.</td></tr>
+  <tr><td><code>stopmethod</code></td><td><code>"bigs"</code>: early stop when the active set saturates (<code>nnz &gt; length(Lambdapath)*n</code> or <code>numAS &gt; 4</code>); <code>"fix"</code>: solve every lambda in the path.</td></tr>
+  <tr><td><code>fixnumber</code></td><td>With <code>stopmethod = "fix"</code>, number of leading lambdas to solve.</td></tr>
+  <tr><td><code>maxiter</code></td><td>Maximum outer (ALM) iterations.</td></tr>
+  <tr><td><code>maxlambdacheck</code></td><td>Drop lambdas exceeding the data-dependent max-lambda.</td></tr>
+  <tr><td><code>printmain</code></td><td>Print per-lambda progress.</td></tr>
+  <tr><td><code>printsub</code></td><td>Print subproblem (SSNAL) progress.</td></tr>
+  <tr><td><code>stoptol</code></td><td>Stopping tolerance; the solver stops once <code>max(primfeas, dualfeas) &lt; 500*max(1e-6, stoptol)</code> and <code>eta &lt; stoptol</code> (includes the <code>gap &lt; tol</code> criterion).</td></tr>
+  <tr><td><code>sigma</code></td><td>Initial ALM penalty parameter.</td></tr>
+</table>
+<h3 style="font-size:17px;margin:22px 0 6px;">Real-data example (prostate gene expression)</h3>
+<pre><code>library(MARS)
+prost &lt;- read.csv("prostmat.csv", header = FALSE)   <span class="cm"># 6033 x 102</span>
+X1 &lt;- as.matrix(prost[, 1:50])        <span class="cm"># control subjects (n = 50)</span>
+X2 &lt;- as.matrix(prost[, 51:102])      <span class="cm"># cancer subjects (n = 52)</span>
+
+sol1 &lt;- MARS(X1, Lambdapath = c(0.5, 0.4, 0.3, 0.25),
+             stopmethod = "fix", maxiter = 10, stoptol = 1e-4)
+sol2 &lt;- MARS(X2, Lambdapath = c(0.5, 0.4, 0.3, 0.25),
+             stopmethod = "fix", maxiter = 10, stoptol = 1e-4)
+
+<span class="cm"># sparsity pattern = gene network: Omega[i,j] != 0 means genes i, j are</span>
+<span class="cm"># conditionally dependent given all other genes</span>
+Omega &lt;- as.matrix(sol1$Omegapath[[4]])
 </code></pre>
     </div>
     <div class="tabpanel" id="tabPy">
-<pre><code><span class="cm"># install (needs Python 3.9+; NumPy core, optional Numba JIT acceleration &mdash; no MKL required)</span>
+<pre><code><span class="cm"># 1) installation: needs Python 3.8+; NumPy core, optional Numba JIT</span>
+<span class="cm">#    acceleration (jit extra) &mdash; no MKL required:</span>
 pip install -e "./MARS_python[jit]"
 
-<span class="cm"># solve: p = 3000, n = 50</span>
+<span class="cm"># 2) solve a lambda path: p = 3000, n = 50</span>
 import numpy as np
 from mars import mars_path, maxLambda
 
@@ -319,7 +366,30 @@ Omegapath, Lambdapath, timepath = mars_path(
 
 Omega = Omegapath[0]               <span class="cm"># 3000x3000 symmetric; nonzero pattern = graph</span>
 </code></pre>
+<p style="font-size:15px;color:var(--muted);margin-top:14px;">
+The Python implementation is numerically equivalent to the R version
+(verified iteration-by-iteration) and is roughly 3&ndash;4&times; faster than
+the pure-NumPy baseline when the Numba JIT kernels are enabled. The public API
+is <code>mars_path(X, Lambdapath, stoptol, maxiter, stopmethod, ...)</code>;
+<code>maxLambda(X)</code> returns the data-dependent max-lambda.
+</p>
     </div>
+  </div>
+
+  <div class="wrap" style="margin-top:46px;">
+    <h3 style="font-size:19px;margin:0 0 8px;">Performance notes</h3>
+    <p style="font-size:16px;color:var(--muted);line-height:1.7;max-width:900px;">
+      The R package links against the system BLAS/LAPACK. Replacing the default
+      Reference BLAS with a multi-threaded BLAS (e.g. Intel MKL) can speed up
+      the matrix-heavy parts 5&ndash;6&times;. On Windows this means using an
+      MKL-enabled build of R (e.g. Microsoft R Open) or replacing
+      <code>Rblas.dll</code> / <code>Rlapack.dll</code> in
+      <code>R-&lt;version&gt;/bin/x64</code> with the MKL versions; make sure the
+      MKL runtime <code>mkl_rt.2.dll</code> is available in the same directory
+      so that compiled packages can load. The adaptive sieving strategy keeps
+      the active set small in the high/medium-lambda regime, so memory stays
+      low even when <code>p</code> is large.
+    </p>
   </div>
 
   <div class="wrap" style="margin-top:46px;">

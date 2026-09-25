@@ -4,6 +4,8 @@
 precision matrix** estimation. The package provides both an R implementation
 (`MARS`) and a Python implementation (see [Python version](#python-version)).
 
+**Website:** <https://QianLI-QL-XA.github.io/MARS/>
+
 ## What does MARS estimate?
 
 Given `n` i.i.d. samples of a `p`-dimensional random vector with sample matrix
@@ -54,7 +56,7 @@ From GitHub:
 
 ```r
 library(devtools)
-devtools::install_github("QianLI-QL/MARS")
+devtools::install_github("QianLI-QL-XA/MARS")
 ```
 
 Or locally, from the package source directory (where `DESCRIPTION` lives):
@@ -111,16 +113,16 @@ library(MARS)
 prost <- read.csv("prostmat.csv", header = FALSE)   # 6033 x 102
 X1 <- as.matrix(prost[, 1:50])                      # control subjects (n = 50)
 X2 <- as.matrix(prost[, 51:102])                    # cancer subjects (n = 52)
-sol1 <- MARS(X1, Lambdapath = c(0.95, 0.85, 0.75, 0.65) * maxLambda(X1),
+sol1 <- MARS(X1, Lambdapath = c(0.5, 0.4, 0.3, 0.25),
              stopmethod = "fix", maxiter = 10, stoptol = 1e-4)
-sol2 <- MARS(X2, Lambdapath = c(0.95, 0.85, 0.75, 0.65) * maxLambda(X2),
+sol2 <- MARS(X2, Lambdapath = c(0.5, 0.4, 0.3, 0.25),
              stopmethod = "fix", maxiter = 10, stoptol = 1e-4)
 ```
 
 The sparsity pattern (`Omega != 0`) gives the estimated gene network; entries
 `Omega_ij != 0` indicate conditional dependence between gene `i` and gene `j`
-given all other genes. `maxLambda(X)` returns the data-dependent max-lambda
-(the largest value for which a non-diagonal edge can enter the solution).
+given all other genes. With `maxlambdacheck = TRUE` (default) lambdas above
+the data-dependent max-lambda are discarded automatically.
 
 ## Python version
 
@@ -149,9 +151,11 @@ baseline when the Numba JIT kernels are enabled. See `MARS_python/README.md`.
 
 - The R package links against the system BLAS/LAPACK. Replacing the default
   Reference BLAS with a multi-threaded BLAS (e.g. Intel MKL) can speed up the
-  matrix-heavy parts 5-6x. On Windows, copy `mkl_rt.2.dll` over `Rblas.dll`
-  and `Rlapack.dll` (see `MARS_matlab/MARS-R-MKL-optimization.md` for a
-  worked example).
+  matrix-heavy parts 5-6x. On Windows this means using an MKL-enabled build of
+  R (e.g. Microsoft R Open) or replacing `Rblas.dll` / `Rlapack.dll` in
+  `R-<version>/bin/x64` with the MKL versions; make sure the MKL runtime
+  `mkl_rt.2.dll` is available in the same directory so that compiled packages
+  can load.
 - The adaptive sieving strategy keeps the active set small in the
   high/medium-lambda regime, so memory stays low even when `p` is large.
 
