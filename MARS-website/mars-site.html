@@ -168,7 +168,7 @@
         precision matrices estimation.&rdquo;
         <i>Journal of Machine Learning Research</i>, 24 (2023) 1-44.
       </div>
-      <div class="hero-visits">Views: <span id="busuanzi_value_site_pv">0</span></div>
+      <div class="hero-visits">Thanks for visiting &mdash; you are the <span id="visitorOrd">1st</span> visitor to this site.<span id="busuanzi_value_site_uv" style="display:none">0</span></div>
     </div>
   </div>
 </section>
@@ -652,5 +652,24 @@ is <code>mars_path(X, Lambdapath, stoptol, maxiter, stopmethod, ...)</code>;
 })();
 </script>
 <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+(function(){
+  var tries = 0;
+  var timer = setInterval(function(){
+    var raw = document.getElementById('busuanzi_value_site_uv');
+    var out = document.getElementById('visitorOrd');
+    if (raw && out) {
+      var n = parseInt(raw.textContent, 10);
+      if (!isNaN(n) && n > 0) {
+        var s = ['th','st','nd','rd'], v = n % 100;
+        out.textContent = n + (s[(v-20)%10] || s[v] || s[0]);
+        clearInterval(timer);
+        return;
+      }
+    }
+    if (++tries > 30) clearInterval(timer);
+  }, 1000);
+})();
+</script>
 </body>
 </html>
