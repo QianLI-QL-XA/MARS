@@ -109,6 +109,11 @@ MARS(X, Lambdapath, stopmethod = c("bigs", "fix"), fixnumber = 1L,
 
 ### Real-data example (prostate gene expression)
 
+`prostmat.csv`: expression activity of `p = 6033` genes on 50 controls and 52
+prostate cancer patients. Data available at
+<https://web.stanford.edu/~hastie/CASI_files/DATA/prostate.html> (Singh et al.
+2002, *Cancer Cell* 1(2):203-209).
+
 ```r
 library(MARS)
 prost <- read.csv("prostmat.csv", header = FALSE)   # 6033 x 102
