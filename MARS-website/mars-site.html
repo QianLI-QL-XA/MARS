@@ -101,6 +101,15 @@
   .hero-cite a:hover{color:#FDE68A; text-decoration:underline;}
   .hero-visits{margin-top:26px; font-size:13px; color:#9F7B73; letter-spacing:.4px;}
   .hero-visits #busuanzi_value_site_pv{color:#E8A29A; font-variant-numeric:tabular-nums;}
+  @keyframes heroFade{from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:none;}}
+  #view-home.active .hero-inner > *{animation:heroFade .7s ease both;}
+  #view-home.active .hero-inner > *:nth-child(1){animation-delay:.05s;}
+  #view-home.active .hero-inner > *:nth-child(2){animation-delay:.14s;}
+  #view-home.active .hero-inner > *:nth-child(3){animation-delay:.24s;}
+  #view-home.active .hero-inner > *:nth-child(4){animation-delay:.34s;}
+  #view-home.active .hero-inner > *:nth-child(5){animation-delay:.44s;}
+  #view-home.active .hero-inner > *:nth-child(6){animation-delay:.54s;}
+  @media (prefers-reduced-motion: reduce){#view-home.active .hero-inner > *{animation:none;}}
   .cite a{color:#FDBA74; text-decoration:none;}
   .cite a:hover{color:#FDE68A; text-decoration:underline;}
   /* demo */
