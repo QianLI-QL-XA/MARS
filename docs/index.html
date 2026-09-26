@@ -99,6 +99,8 @@
   .hero-cite{margin-top:24px; font-size:14px; color:#C9A29A; line-height:1.6; max-width:600px;}
   .hero-cite a{color:#FDBA74; text-decoration:none;}
   .hero-cite a:hover{color:#FDE68A; text-decoration:underline;}
+  .hero-visits{margin-top:26px; font-size:13px; color:#9F7B73; letter-spacing:.4px;}
+  .hero-visits #busuanzi_value_site_pv{color:#E8A29A; font-variant-numeric:tabular-nums;}
   .cite a{color:#FDBA74; text-decoration:none;}
   .cite a:hover{color:#FDE68A; text-decoration:underline;}
   /* demo */
@@ -166,6 +168,7 @@
         precision matrices estimation.&rdquo;
         <i>Journal of Machine Learning Research</i>, 24 (2023) 1-44.
       </div>
+      <div class="hero-visits">Views: <span id="busuanzi_value_site_pv">0</span></div>
     </div>
   </div>
 </section>
@@ -641,7 +644,8 @@ is <code>mars_path(X, Lambdapath, stoptol, maxiter, stopmethod, ...)</code>;
     });
   }
 
-  window.addEventListener("hashchange", route);
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+window.addEventListener("hashchange", route);
   window.addEventListener("resize", function(){
     if (chartInited){ var c = echarts.getInstanceByDom(document.getElementById("perfChart")); if (c) c.resize(); }
   });
